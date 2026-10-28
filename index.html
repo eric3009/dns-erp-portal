@@ -1,0 +1,1591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>D&amp;S ERP Portal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ERP work surface. Side rail of modules, list/detail panes, tablet-sized counter. Accent is a hue the user picks; neutrals stay fixed per theme. */
+:root{
+  --hue:178; --chroma:.105;
+  --bg:#EEF2F0; --surface:#FFFFFF; --sunk:#F5F8F6; --ink:#13221F; --muted:#5A6B66; --line:#D8E0DC; --scrim:rgba(10,20,18,.42);
+  --accent:oklch(.50 var(--chroma) var(--hue)); --accent-ink:#FFFFFF; --accent-soft:oklch(.945 calc(var(--chroma)*.3) var(--hue));
+  --good:#17784A; --good-soft:#DFF2E7; --warn:#9A6212; --warn-soft:#FBEFD9; --bad:#B42318; --bad-soft:#FBE4E1; --info:#24578F; --info-soft:#E1EBF7;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:8px; --pad:16px; --cell:8px 12px; --gap:16px;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1513; --surface:#151F1C; --sunk:#111917; --ink:#E3ECE8; --muted:#93A49F; --line:#26332F; --scrim:rgba(0,0,0,.55);
+  --accent:oklch(.76 calc(var(--chroma)*1.1) var(--hue)); --accent-ink:#06201A; --accent-soft:oklch(.31 calc(var(--chroma)*.45) var(--hue));
+  --good:#52C487; --good-soft:#163324; --warn:#E3AA4C; --warn-soft:#382B15; --bad:#F27B6F; --bad-soft:#3C1C19; --info:#7FB0EA; --info-soft:#18283C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1513; --surface:#151F1C; --sunk:#111917; --ink:#E3ECE8; --muted:#93A49F; --line:#26332F; --scrim:rgba(0,0,0,.55);
+  --accent:oklch(.76 calc(var(--chroma)*1.1) var(--hue)); --accent-ink:#06201A; --accent-soft:oklch(.31 calc(var(--chroma)*.45) var(--hue));
+  --good:#52C487; --good-soft:#163324; --warn:#E3AA4C; --warn-soft:#382B15; --bad:#F27B6F; --bad-soft:#3C1C19; --info:#7FB0EA; --info-soft:#18283C; color-scheme:dark}
+:root[data-accent="blue"]{--hue:252}
+:root[data-accent="clay"]{--hue:42; --chroma:.12}
+:root[data-accent="plum"]{--hue:320}
+:root[data-accent="graphite"]{--hue:200; --chroma:.012}
+:root[data-density="compact"]{--pad:11px; --cell:5px 10px; --gap:11px}
+
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+.t .mono,.t a.mono{white-space:nowrap}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-size:.92em}
+.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.muted{color:var(--muted)}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:700}
+h2{font-size:17px;font-weight:600}
+h3{font-size:14px;font-weight:600}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+select,input[type=text],input[type=number],input[type=date],input[type=search],textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
+textarea{width:100%;resize:vertical}
+input[type=range]{accent-color:var(--accent);width:100%}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+
+/* Top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;padding-block:9px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.mark{width:28px;height:28px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);flex:none;transition:background .3s}
+.brand b{font-family:var(--f-display);font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.proto{font-size:11px;font-weight:600;color:var(--warn);background:var(--warn-soft);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.icon-btn{position:relative;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:7px;height:34px;padding:0 9px;cursor:pointer;color:var(--ink)}
+.icon-btn:hover{border-color:var(--accent)}
+.icon-btn svg{flex:none}
+.icon-btn .dot{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:999px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center;padding:0 4px}
+.kbd{font-family:var(--f-mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.searchbtn{min-width:220px;justify-content:flex-start;color:var(--muted)}
+.searchbtn .kbd{margin-left:auto}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600;font-size:11.5px;flex:none}
+.ctl{display:flex;align-items:center;gap:6px}
+.ctl label{font-size:12px;color:var(--muted)}
+
+/* Banner */
+.banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--warn-soft);border-bottom:1px solid var(--line);font-size:13px}
+.banner.bad{background:var(--bad-soft)}
+
+/* Shell */
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:calc(100% - 53px)}
+.side{border-right:1px solid var(--line);background:var(--sunk);padding:14px 10px;display:flex;flex-direction:column;gap:2px;padding-left:max(10px,env(safe-area-inset-left,0px))}
+.side a{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-weight:500;transition:background .15s}
+.side a:hover{background:var(--surface)}
+.side a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.side .grp{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;padding:12px 10px 4px}
+.side .count{font-size:11px;font-weight:600;background:var(--warn);color:var(--surface);border-radius:999px;padding:0 7px;line-height:18px}
+.side .count.bad{background:var(--bad)}
+.side .count.acc{background:var(--accent);color:var(--accent-ink)}
+main{min-width:0;padding-block:20px 56px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.view{display:flex;flex-direction:column;gap:var(--gap)}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+
+/* Pieces */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--pad);min-width:0}
+.card.flush{padding:0;overflow:hidden}
+.card > h2,.card > h3{margin-bottom:10px}
+.cardhead{padding:14px var(--pad) 6px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.grid{display:grid;gap:var(--gap)}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px;text-align:left;cursor:pointer;transition:border-color .15s,transform .15s var(--ease)}
+.tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+.tile .v{font-family:var(--f-display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile .l{font-size:12px;color:var(--muted)}
+.tile.static{cursor:default}.tile.static:hover{transform:none;border-color:var(--line)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:500;white-space:nowrap;transition:border-color .15s,filter .15s,transform .1s}
+.btn:hover{border-color:var(--accent)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;background:var(--sunk);color:var(--muted)}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.info{background:var(--info-soft);color:var(--info)}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+.spin{width:10px;height:10px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;display:inline-block;animation:spin .8s linear infinite}
+.note{border-radius:6px;padding:10px 12px;font-size:13px}
+.note.warn{background:var(--warn-soft);border-left:3px solid var(--warn)}
+.note.bad{background:var(--bad-soft);border-left:3px solid var(--bad)}
+.note.good{background:var(--good-soft);border-left:3px solid var(--good)}
+.note.info{background:var(--info-soft);border-left:3px solid var(--info)}
+.note ul{margin:4px 0 0;padding-left:18px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s,border-color .2s}
+.tabs button[aria-selected="true"]{color:var(--accent);border-color:var(--accent);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;padding:2px;gap:2px;background:var(--sunk)}
+.seg button{border:0;background:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.scroll{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse}
+.t th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:var(--cell);border-bottom:1px solid var(--line);background:var(--sunk);white-space:nowrap}
+.t td{padding:var(--cell);border-bottom:1px solid var(--line);vertical-align:top}
+.t tr:last-child td{border-bottom:0}
+.t tr.click{cursor:pointer}
+.t tr.click:hover td{background:var(--sunk)}
+.t tr.here td{background:var(--accent-soft)}
+.t th.num{text-align:right}
+.t td.c,.t th.c{text-align:center}
+.split{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:var(--gap);align-items:start}
+.list{display:flex;flex-direction:column;max-height:70vh;overflow:auto}
+.li{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border:0;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;background:none;width:100%;transition:background .12s}
+.li:hover{background:var(--sunk)}
+.li[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.li .s{font-size:12px;color:var(--muted)}
+.li .r{text-align:right;white-space:nowrap}
+.searchbar{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.searchbar input{flex:1 1 140px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 18px}
+.kv div span{display:block;font-size:11.5px;color:var(--muted)}
+.kv div b{font-weight:500}
+.bar{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--accent);transform-origin:left;animation:grow .6s var(--ease)}
+.bar.warn i{background:var(--warn)} .bar.bad i{background:var(--bad)}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:12px;color:var(--muted);font-weight:500}
+.field .err{font-size:12px;color:var(--bad)}
+.field.invalid input,.field.invalid textarea{border-color:var(--bad)}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.form .wide{grid-column:1/-1}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hist li{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:13px}
+.hist li > span:first-child{color:var(--muted);font-size:12px}
+.rule{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.rule:last-child{border-bottom:0}
+.rule .k{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:500;padding-top:1px}
+.phase{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.phase > div{padding:12px;border-right:1px solid var(--line);background:var(--surface)}
+.phase > div:last-child{border-right:0}
+.phase > div.on{background:var(--accent-soft)}
+.phase b{display:block;font-family:var(--f-display);font-size:13px;margin:2px 0}
+.phase p{margin:0;font-size:12.5px;color:var(--muted)}
+.cache{font-size:11.5px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.cache::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--good)}
+
+/* Counter */
+.counter{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,1fr);gap:var(--gap);align-items:start}
+.scan{display:flex;gap:8px}
+.scan input{flex:1;font-size:17px;padding:12px 14px;font-family:var(--f-mono)}
+.tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tpl{border:1px solid var(--line);background:var(--sunk);border-radius:var(--r);padding:12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:border-color .15s,background .15s,transform .15s var(--ease)}
+.tpl:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-1px)}
+.tpl b{font-family:var(--f-display);font-weight:600}
+.tpl span{font-size:12px;color:var(--muted)}
+.quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.qi{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:1px;min-height:64px;transition:border-color .15s,transform .1s}
+.qi:hover{border-color:var(--accent)}
+.qi:active{transform:scale(.97)}
+.qi .c{font-family:var(--f-mono);font-size:11.5px;color:var(--accent)}
+.qi .d{font-size:12.5px;line-height:1.25}
+.qi .p{font-size:12px;color:var(--muted);margin-top:auto}
+.cart{position:sticky;top:72px}
+.cl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.cl.flash{animation:flash 1s var(--ease)}
+.cl .ctrls{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.cl input{width:64px;padding:4px 6px}
+.step{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.step button{border:0;background:var(--sunk);width:30px;cursor:pointer;font-size:15px}
+.step input{border:0;border-radius:0;width:56px;text-align:center}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding-top:12px}
+.total b{font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+
+/* Overlays */
+.ov{position:fixed;inset:0;background:var(--scrim);z-index:40;display:flex;justify-content:flex-end;animation:fade .18s ease-out}
+.drawer{background:var(--surface);width:min(620px,100%);height:100%;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:14px;animation:slidein .26s var(--ease);
+  padding-top:max(20px,env(safe-area-inset-top,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-bottom:max(20px,env(safe-area-inset-bottom,0px))}
+.ov.leaving{animation:fadeout .17s ease-in forwards}
+.ov.leaving .drawer{animation:slideout .17s ease-in forwards}
+.drawer .x{align-self:flex-end}
+.pal-ov{position:fixed;inset:0;background:var(--scrim);z-index:45;display:flex;justify-content:center;align-items:flex-start;padding:max(70px,calc(env(safe-area-inset-top,0px) + 60px)) 16px 16px;animation:fade .15s}
+.pal{background:var(--surface);border:1px solid var(--line);border-radius:12px;width:min(620px,100%);box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;animation:pop .2s var(--ease)}
+.pal input{width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px 16px;font-size:16px;background:transparent}
+.pal input:focus{outline:none}
+.pal .res{max-height:min(420px,60vh);overflow:auto;padding:6px}
+.pal .g{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;padding:8px 10px 4px}
+.pal .o{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;width:100%;border:0;background:none;text-align:left}
+.pal .o[aria-selected="true"]{background:var(--accent-soft)}
+.pal .o span:last-child{color:var(--muted);font-size:12px;white-space:nowrap}
+.pal .foot{border-top:1px solid var(--line);padding:8px 12px;font-size:11.5px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.pop{position:fixed;z-index:35;top:calc(env(safe-area-inset-top,0px) + 58px);right:max(16px,env(safe-area-inset-right,0px));width:min(340px,calc(100% - 32px));background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:14px;display:flex;flex-direction:column;gap:14px;animation:drop .18s var(--ease);max-height:calc(100% - 80px);overflow:auto}
+.pop .row{display:flex;flex-direction:column;gap:6px}
+.swatches{display:flex;gap:8px}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer;transition:transform .15s var(--ease)}
+.sw:hover{transform:scale(1.1)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
+.notif{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:6px;cursor:pointer;border:0;background:none;text-align:left;width:100%}
+.notif:hover{background:var(--sunk)}
+.notif.unread{background:var(--accent-soft)}
+.notif span{font-size:11.5px;color:var(--muted)}
+.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:50;display:flex;flex-direction:column;gap:8px;align-items:center;width:calc(100% - 32px);max-width:440px;pointer-events:none}
+.toast{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,.2);animation:toastin .3s var(--ease);display:flex;gap:8px;align-items:center}
+.toast.good::before{content:"✓";color:var(--good)}
+.toast.bad::before{content:"!";color:var(--bad);font-weight:700}
+
+/* Sign-in */
+.signin{min-height:100%;display:grid;place-items:center;padding-block:32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.signin-box{width:min(880px,100%);display:flex;flex-direction:column;gap:20px}
+.signin-box h1{font-size:30px}
+.users{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.ucard{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:border-color .15s,transform .2s var(--ease),box-shadow .2s}
+.ucard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+.ucard[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+.ucard .top2{display:flex;gap:10px;align-items:center}
+.ucard .avatar{width:34px;height:34px;font-size:13px}
+
+/* Matrix */
+.mx td:first-child{min-width:240px}
+.mx .area td{background:var(--sunk);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.lock{font-size:11px;color:var(--muted)}
+
+/* Motion */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fade{from{opacity:0}}
+@keyframes fadeout{to{opacity:0}}
+@keyframes slidein{from{transform:translateX(40px);opacity:.4}}
+@keyframes slideout{to{transform:translateX(40px);opacity:0}}
+@keyframes pop{from{transform:translateY(-8px) scale(.98);opacity:0}}
+@keyframes drop{from{transform:translateY(-6px);opacity:0}}
+@keyframes toastin{from{transform:translateY(14px);opacity:0}}
+@keyframes rise{from{transform:translateY(8px);opacity:0}}
+@keyframes grow{from{transform:scaleX(0)}}
+@keyframes flash{0%{background:var(--accent-soft)}100%{background:transparent}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--good)}100%{box-shadow:0 0 0 8px transparent}}
+.view.enter > *{animation:rise .32s var(--ease) both}
+.view.enter > *:nth-child(2){animation-delay:.04s}
+.view.enter > *:nth-child(3){animation-delay:.08s}
+.view.enter > *:nth-child(4){animation-delay:.12s}
+.view.enter > *:nth-child(n+5){animation-delay:.16s}
+.chip.pulse{animation:pulse .9s ease-out}
+:root[data-motion="off"] *,:root[data-motion="off"] *::before{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}
+:root[data-motion="off"] .spin{animation-duration:.8s!important}
+@media (prefers-reduced-motion:reduce){*,*::before{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important}.spin{animation:none;border-right-color:currentColor;opacity:.6}}
+
+@media (max-width:1100px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.counter{grid-template-columns:1fr}.cart{position:static}.searchbtn{min-width:0}.searchbtn .lbl,.searchbtn .kbd{display:none}}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .side{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px))}
+  .side a{white-space:nowrap}
+  .side .grp{display:none}
+  main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .split,.g2{grid-template-columns:1fr}
+  .phase{grid-template-columns:1fr 1fr}
+  .phase > div:nth-child(2){border-right:0}
+  .phase > div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .list{max-height:40vh}
+  .branchctl label{display:none}
+}
+@media (max-width:560px){.form,.tpls{grid-template-columns:1fr}.brand .proto,.branchctl,.uname{display:none}.top{gap:6px}}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div id="popRoot"></div>
+<div id="modalRoot"></div>
+<div id="palRoot"></div>
+<div class="toasts" id="toastRoot" aria-live="polite"></div>
+
+<script>
+/* ============ helpers ============ */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KES = n => 'KSh ' + Math.round(n).toLocaleString('en-KE');
+const fmtD = d => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+const fmtT = ts => new Date(ts).toLocaleString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+const ago = ts => { const s = Math.round((Date.now() - ts)/1000); return s < 60 ? s + 's ago' : s < 3600 ? Math.round(s/60) + ' min ago' : s < 86400 ? Math.round(s/3600) + ' h ago' : Math.round(s/86400) + ' d ago'; };
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+const iso = d => { const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); };
+const daysAgo = n => { const d = new Date(TODAY); d.setDate(d.getDate() - n); return iso(d); };
+const daysAhead = n => daysAgo(-n);
+const todayISO = iso(TODAY);
+const ageDays = d => Math.round((TODAY - new Date(d + 'T00:00:00')) / 864e5);
+const initials = n => n.split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const motionOn = () => document.documentElement.dataset.motion !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+const I = {
+  search:'<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.8"/><path d="m10.6 10.6 3.6 3.6"/></svg>',
+  bell:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 11V7a4 4 0 1 1 8 0v4l1.2 1.4H2.8L4 11Z"/><path d="M6.5 14h3"/></svg>',
+  gear:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>',
+  drop:'<svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1.5C8 1.5 3 7 3 10a5 5 0 0 0 10 0c0-3-5-8.5-5-8.5Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+};
+
+/* ============ reference data ============ */
+const BRANCHES = {RET:'Retail, Industrial Area', UTW:'Utawala', DTN:'Downtown', MSA:'Mombasa', KSM:'Kisumu'};
+const PERMS = [
+  ['Everyday', [['dashboard','See the home dashboard'],['self.use','Raise petty cash, floats, purchase requests and RFQs']]],
+  ['Customers', [['customers.view','Look up customers and purchase history'],['customers.ledger','See balances, ledgers and statements']]],
+  ['Items', [['items.view','See prices, stock by branch and incoming stock'],['items.cost','See cost prices and margins']]],
+  ['Sales', [['counter.use','Use the counter (scan, kits, fast movers)'],['sales.view','See quotes and orders'],['sales.create','Create quotes and place orders']]],
+  ['Service', [['jobs.view','View jobs, entries and attachments'],['jobs.requisition','Requisition items into jobs'],['warranty.manage','Log warranty claims'],['warranty.decide','Approve or reject warranty claims']]],
+  ['Approvals', [['approvals.branch','Approve branch-route documents'],['approvals.manager','Approve discounts, credit holds and large amounts']]],
+  ['Administration', [['admin.roles','Manage users, roles and permissions'],['admin.sync','Monitor BC sync, retry and simulate outages'],['audit.view','Read the audit log']]],
+];
+const ALL_PERMS = PERMS.flatMap(([,ps]) => ps.map(p => p[0]));
+const DEFAULT_ROLES = {
+  approver:{label:'Approver', desc:'Light user who mainly views and approves', phase:1, perms:['dashboard','self.use','customers.view','customers.ledger','items.view','jobs.view','approvals.branch']},
+  sales:{label:'Sales engineer', desc:'Sells at the counter and in the field', phase:2, perms:['dashboard','self.use','customers.view','customers.ledger','items.view','counter.use','sales.view','sales.create','jobs.view']},
+  engineer:{label:'Service engineer', desc:'Runs jobs, requisitions and warranty', phase:3, perms:['dashboard','self.use','customers.view','items.view','jobs.view','jobs.requisition','warranty.manage']},
+  manager:{label:'Sales manager', desc:'Approves discounts, credit and large requests', phase:2, perms:['dashboard','self.use','customers.view','customers.ledger','items.view','items.cost','counter.use','sales.view','sales.create','jobs.view','jobs.requisition','warranty.manage','warranty.decide','approvals.branch','approvals.manager','audit.view']},
+  admin:{label:'Portal admin', desc:'Digital team: users, roles and BC sync', phase:0, perms:['dashboard','customers.view','items.view','jobs.view','admin.roles','admin.sync','audit.view']},
+};
+const SEED_USERS = [
+  ['u1','Grace Wanjiru','approver','UTW','Branch Manager, Utawala'],
+  ['u2','Kevin Otieno','sales','RET','Sales Engineer, Retail'],
+  ['u3','Lucy Mutheu','sales','UTW','Sales Engineer, Utawala'],
+  ['u4','Faith Njeri','engineer','RET','Service Engineer, Workshop'],
+  ['u5','Samuel Kiprono','engineer','UTW','Service Engineer, Utawala'],
+  ['u6','Peter Kamau','manager','RET','Regional Sales Manager'],
+  ['u7','Hamisi Bakari','engineer','MSA','Service Engineer, Mombasa'],
+  ['u8','Digital Admin','admin','RET','Digital team'],
+];
+const RULES = {maxDiscount:10, pettyCashApproverLimit:10000, floatApproverLimit:50000, reqAutoLimit:50000, warrantyMonths:12, maxAttempts:3};
+const BC_ERRORS = ['409 Conflict: record locked by another user','503 Service unavailable','Request timed out after 30 s','400 Dimension value is blocked'];
+const ITEM_ROWS = [
+  ['PKM60','Peripheral pump 0.37 kW, 230 V','Pumps','PCS',9850,6380,[14,6,9,4,3]],
+  ['CPM158','Centrifugal pump 0.75 kW, 230 V','Pumps','PCS',18900,12350,[7,3,5,2,0]],
+  ['SUB4-15','Submersible borehole pump 4", 1.5 kW','Pumps','PCS',98500,66100,[2,1,0,1,1]],
+  ['SUB4-22','Submersible borehole pump 4", 2.2 kW','Pumps','PCS',132000,88900,[1,0,0,1,0]],
+  ['BST-11','Pressure booster set 1.1 kW, 24 L','Pumps','PCS',74500,49800,[3,2,1,0,1]],
+  ['PT-24','Pressure tank 24 L, horizontal','Accessories','PCS',6900,4200,[22,8,12,6,5]],
+  ['PSW-15','Pressure switch 1.5–3 bar','Accessories','PCS',2450,1380,[40,15,25,10,9]],
+  ['CBL-4G25','Submersible cable 4 × 2.5 mm²','Cables','M',390,240,[600,250,0,300,150]],
+  ['SPN-410','Solar panel 410 W mono','Solar','PCS',18500,12900,[24,12,0,18,6]],
+  ['SPC-15','Solar pump controller 1.5 kW','Solar','PCS',46800,31200,[2,1,0,0,1]],
+  ['FLT-H20','Filter housing 20", sediment','Water treatment','PCS',7800,4900,[9,4,6,3,2]],
+  ['FLT-C05','Filter cartridge 5 µm, 20"','Water treatment','PCS',1150,620,[85,30,44,20,12]],
+  ['RO-75','Reverse osmosis unit 75 GPD','Water treatment','PCS',38500,25400,[4,2,3,1,0]],
+  ['TNK-5K','Water tank 5,000 L','Tanks','PCS',54900,41800,[6,9,0,4,3]],
+  ['GV-25','Gate valve 1", brass','Fittings','PCS',1650,980,[60,20,35,18,10]],
+  ['HDP-32','HDPE pipe 32 mm PN10','Pipes','M',210,128,[1200,400,800,500,300]],
+  ['HP-9K','Pool heat pump 9 kW','Pool','PCS',289000,201000,[1,0,0,2,0]],
+  ['CHL-1K','Chlorine tablets 1 kg','Pool','PCS',2350,1450,[30,10,18,26,4]],
+  ['GEN-5K','Petrol generator 5 kVA','Power','PCS',112000,79500,[2,1,1,1,0]],
+  ['CP-3P4','Pump control panel 3-phase, 4 kW','Accessories','PCS',36400,23900,[3,1,2,1,0]],
+];
+const CUSTOMER_ROWS = [
+  ['C10021','Mwangaza Hardware Ltd','Dealer','0722 410 556','RET',1500000,'30 days'],
+  ['C10048','Rift Valley Agro Farms','Corporate','0733 118 902','UTW',2000000,'45 days'],
+  ['C10077','Kilimani Heights Apartments','Contractor','0711 902 334','RET',900000,'30 days'],
+  ['C10102','Jane Achieng','Walk-in (cash)','0798 221 640','RET',0,'Cash'],
+  ['C10135','Coastline Hotels Ltd','Corporate','0720 655 019','MSA',3000000,'60 days'],
+  ['C10166',"St. Mary's Mission Hospital",'Institution','0724 300 871','DTN',1200000,'30 days'],
+  ['C10190','Baraka Borehole Drillers','Contractor','0712 774 205','UTW',800000,'30 days',0.96],
+  ['C10213','Nyota Plumbing Supplies','Dealer','0735 019 448','DTN',1000000,'30 days'],
+  ['C10251','County Water Services','Institution','0709 553 120','UTW',5000000,'60 days'],
+  ['C10288','Daniel Mutua','Walk-in (cash)','0745 880 317','RET',0,'Cash'],
+  ['C10302','Lakeside Flower Farm','Corporate','0726 441 093','KSM',1500000,'45 days'],
+  ['C10345','Green Acres School','Institution','0710 286 774','DTN',600000,'30 days'],
+];
+const SALESPEOPLE = ['Kevin Otieno','Lucy Mutheu','Brian Kiprop','Asha Hassan'];
+const TEMPLATES = [
+  {id:'t1', name:'PKM60 domestic kit', note:'Pump, 24 L tank, pressure switch, 2 valves', lines:[['PKM60',1],['PT-24',1],['PSW-15',1],['GV-25',2]]},
+  {id:'t2', name:'Borehole 1.5 kW kit', note:'Pump, 60 m cable, control panel, 60 m pipe', lines:[['SUB4-15',1],['CBL-4G25',60],['CP-3P4',1],['HDP-32',60]]},
+  {id:'t3', name:'Solar borehole kit', note:'Pump, controller, 6 panels, 50 m cable', lines:[['SUB4-15',1],['SPC-15',1],['SPN-410',6],['CBL-4G25',50]]},
+  {id:'t4', name:'Clean water kit', note:'RO unit, filter housing, 3 cartridges', lines:[['RO-75',1],['FLT-H20',1],['FLT-C05',3]]},
+];
+
+/* ============ seed ============ */
+function seed(){
+  const R = rng(4127);
+  const items = ITEM_ROWS.map(([no,desc,cat,uom,price,cost,s],i) => ({no,desc,cat,uom,price,cost,
+    barcode:'6161100' + String(i+1).padStart(5,'0') + String((i*7+3)%10), stock:{RET:s[0],UTW:s[1],DTN:s[2],MSA:s[3],KSM:s[4]}}));
+  const customers = CUSTOMER_ROWS.map(([no,name,group,phone,branch,limit,terms,util]) => ({no,name,group,phone,branch,limit,terms,util}));
+  const ledger = [], invoices = [];
+  let invNo = 58210, rc = 7710;
+  customers.forEach(c => {
+    const n = c.limit ? 5 + Math.floor(R()*5) : 2 + Math.floor(R()*2);
+    const ages = Array.from({length:n}, () => 3 + Math.floor(R()*170)).sort((a,b) => b-a);
+    ages.forEach(a => {
+      const lines = [], k = 1 + Math.floor(R()*3);
+      for (let j=0;j<k;j++){
+        const pool = c.limit ? items : items.filter(i => i.price < 60000);
+        const it = pool[Math.floor(R()*pool.length)];
+        lines.push({item:it.no, desc:it.desc, qty: it.uom === 'M' ? 20 + Math.floor(R()*80) : 1 + Math.floor(R()*3), price:it.price, disc:0});
+      }
+      if (c.no === 'C10102' && a === ages[ages.length-1]) lines[0] = {item:'PKM60', desc:items[0].desc, qty:1, price:items[0].price, disc:0};
+      const amt = lines.reduce((s,l) => s + l.qty*l.price, 0);
+      const doc = 'SI-' + (invNo++);
+      invoices.push({doc, cust:c.no, date:daysAgo(a), salesperson:SALESPEOPLE[Math.floor(R()*SALESPEOPLE.length)], lines, amount:amt});
+      ledger.push({cust:c.no, date:daysAgo(a), type:'Invoice', doc, desc:lines.map(l => l.item).join(', '), amount:amt});
+      if (!c.limit) ledger.push({cust:c.no, date:daysAgo(a), type:'Payment', doc:'RC-'+(rc++), desc:'M-Pesa', amount:-amt});
+      else if (a > 35 && R() < .8) ledger.push({cust:c.no, date:daysAgo(Math.max(1, a-28-Math.floor(R()*10))), type:'Payment', doc:'RC-'+(rc++), desc:R()<.5?'Bank transfer':'Cheque', amount:-amt});
+    });
+    if (c.util){
+      const bal = ledger.filter(e => e.cust === c.no).reduce((s,e) => s + e.amount, 0);
+      const need = Math.round(c.util*c.limit - bal);
+      if (need > 0) ledger.push({cust:c.no, date:daysAgo(52), type:'Invoice', doc:'SI-'+(invNo++), desc:'Project supply, phase 2', amount:need});
+    }
+  });
+  const pos = [
+    {po:'PO-31842', item:'SUB4-22', qty:12, vendor:'Import, Italy', eta:daysAhead(9), status:'In transit'},
+    {po:'PO-31842', item:'SUB4-15', qty:20, vendor:'Import, Italy', eta:daysAhead(9), status:'In transit'},
+    {po:'PO-31907', item:'SPC-15', qty:15, vendor:'Import, China', eta:daysAhead(23), status:'Shipped'},
+    {po:'PO-31911', item:'CPM158', qty:30, vendor:'Import, Italy', eta:daysAhead(9), status:'In transit'},
+    {po:'PO-31950', item:'TNK-5K', qty:40, vendor:'Local plant, Ruiru', eta:daysAhead(4), status:'Confirmed'},
+    {po:'PO-31958', item:'CBL-4G25', qty:2000, vendor:'Local, Nairobi', eta:daysAhead(6), status:'Confirmed'},
+    {po:'PO-31966', item:'HP-9K', qty:4, vendor:'Import, France', eta:daysAhead(41), status:'Ordered'},
+  ];
+  const L = (no, qty) => { const it = items.find(i => i.no === no); return {item:no, desc:it.desc, qty, price:it.price, disc:0}; };
+  const E = (a, no, qty) => { const it = items.find(i => i.no === no); return {date:daysAgo(a), type:'Item', ref:no, desc:it.desc, qty, amount:qty*it.price}; };
+  const LAB = (a, h) => ({date:daysAgo(a), type:'Labour', ref:'LAB-ENG', desc:'Engineer labour (hours)', qty:h, amount:h*1800});
+  const jobs = [
+    {no:'JOB-24811', cust:'C10048', desc:'Solar borehole pump installation, 1.5 kW', branch:'UTW', engineer:'Samuel Kiprono', status:'In progress', opened:daysAgo(12), entries:[E(11,'SUB4-15',1),E(11,'SPN-410',6),E(10,'SPC-15',1),LAB(9,16)], attachments:['site-survey.pdf','borehole-yield-test.pdf']},
+    {no:'JOB-24796', cust:'C10135', desc:'Pool heat pump service, Nyali', branch:'MSA', engineer:'Hamisi Bakari', status:'In progress', opened:daysAgo(20), entries:[E(18,'CHL-1K',10),LAB(18,6)], attachments:['service-checklist.pdf']},
+    {no:'JOB-24788', cust:'C10166', desc:'RO plant annual service', branch:'DTN', engineer:'Faith Njeri', status:'Completed', opened:daysAgo(34), entries:[E(33,'FLT-C05',12),E(33,'FLT-H20',2),LAB(32,8)], attachments:['service-report.pdf','water-test-results.pdf']},
+    {no:'JOB-24823', cust:'C10077', desc:'Booster set commissioning, Block B', branch:'RET', engineer:'Faith Njeri', status:'Open', opened:daysAgo(3), entries:[E(2,'BST-11',1)], attachments:['block-b-drawing.pdf']},
+    {no:'JOB-24830', cust:'C10102', desc:'Peripheral pump repair (walk-in)', branch:'RET', engineer:'Faith Njeri', status:'Open', opened:daysAgo(1), entries:[], attachments:['customer-receipt.jpg']},
+    {no:'JOB-24775', cust:'C10251', desc:'Borehole rehabilitation, Kitengela', branch:'UTW', engineer:'Samuel Kiprono', status:'In progress', opened:daysAgo(41), entries:[E(40,'SUB4-22',1),E(39,'CBL-4G25',90),E(39,'HDP-32',90),LAB(38,24)], attachments:['rehab-proposal.pdf','pump-test.pdf']},
+  ];
+  const warranty = [
+    {no:'WC-1031', cust:'C10102', item:'PKM60', serial:'PK60-2241873', purchased:invoices.find(i => i.cust==='C10102' && i.lines.some(l => l.item==='PKM60'))?.date || daysAgo(40), source:'Invoice', eligible:true, fault:'Pump runs but delivers no water', status:'Under assessment', job:'JOB-24830', date:daysAgo(1)},
+    {no:'WC-1028', cust:'C10021', item:'CPM158', serial:'CP15-1188420', purchased:daysAgo(150), source:'Invoice', eligible:true, fault:'Mechanical seal leaking', status:'Approved, replace', job:'', date:daysAgo(9)},
+    {no:'WC-1025', cust:'C10302', item:'BST-11', serial:'BS11-0932215', purchased:daysAgo(460), source:'Invoice', eligible:false, fault:'Pressure tank membrane burst', status:'Rejected', job:'', date:daysAgo(16)},
+  ];
+  const H = (a, who, what) => ({date:daysAgo(a), who, what});
+  const docs = [
+    {id:'SQ-10882', type:'Quote', cust:'C10135', branch:'MSA', raisedBy:'Kevin Otieno', date:daysAgo(1), status:'Pending approval', needs:'manager', lines:[{...L('HP-9K',2), disc:15},{...L('CHL-1K',20), disc:5}], reasons:['Line HP-9K: discount 15% is above the 10% limit'], history:[H(1,'Kevin Otieno','Created quote'),H(1,'Portal','Sent for approval: discount above limit')]},
+    {id:'SO-20417', type:'Sales order', cust:'C10190', branch:'UTW', raisedBy:'Lucy Mutheu', date:daysAgo(0), status:'Pending approval', needs:'manager', lines:[L('SUB4-15',2),L('CBL-4G25',120)], reasons:['Credit check: the order takes the account over its KSh 800,000 limit'], history:[H(0,'Lucy Mutheu','Placed order'),H(0,'Portal','Held for approval: credit limit')]},
+    {id:'PC-0412', type:'Petty cash', branch:'RET', raisedBy:'Kevin Otieno', date:daysAgo(2), status:'Pending approval', needs:'approver', amount:3450, purpose:'Fuel', reason:'Site visit to Kilimani Heights, Block B', attachments:['fuel-receipt.jpg'], history:[H(2,'Kevin Otieno','Submitted for approval')]},
+    {id:'FL-0219', type:'Float', branch:'UTW', raisedBy:'Samuel Kiprono', date:daysAgo(1), status:'Pending approval', needs:'approver', amount:25000, purpose:'Advance', reason:'Accommodation and meals, Naivasha installation (3 days)', retire:daysAhead(7), history:[H(1,'Samuel Kiprono','Submitted for approval')]},
+    {id:'PR-0331', type:'Purchase request', branch:'UTW', raisedBy:'Lucy Mutheu', date:daysAgo(3), status:'Pending approval', needs:'approver', lines:[{...L('PT-24',20), price:4200}], reason:'Utawala below reorder level', history:[H(3,'Lucy Mutheu','Submitted for approval')]},
+    {id:'PC-0415', type:'Petty cash', branch:'RET', raisedBy:'Faith Njeri', date:daysAgo(0), status:'Pending approval', needs:'manager', amount:14800, purpose:'Tools and consumables', reason:'Thread tape, fittings and sealant for JOB-24823', attachments:['hardware-receipt.pdf'], reasons:['Amount is above KSh 10,000, so a manager approves'], history:[H(0,'Faith Njeri','Submitted for approval')]},
+    {id:'SQ-10870', type:'Quote', cust:'C10021', branch:'RET', raisedBy:'Kevin Otieno', date:daysAgo(4), status:'Open', lines:[L('PKM60',10),L('PT-24',10),{...L('PSW-15',10), disc:5}], history:[H(4,'Kevin Otieno','Created quote')]},
+    {id:'SO-20409', type:'Sales order', cust:'C10077', branch:'RET', raisedBy:'Kevin Otieno', date:daysAgo(6), status:'Released', lines:[L('BST-11',1),L('GV-25',4)], history:[H(6,'Kevin Otieno','Placed order'),H(6,'Portal','Released')]},
+    {id:'PC-0405', type:'Petty cash', branch:'RET', raisedBy:'Kevin Otieno', date:daysAgo(9), status:'Approved', needs:'approver', amount:1800, purpose:'Transport', reason:'Delivery of filter cartridges to client', history:[H(9,'Kevin Otieno','Submitted for approval'),H(8,'Grace Wanjiru','Approved')]},
+    {id:'RFQ-0088', type:'RFQ', branch:'RET', raisedBy:'Kevin Otieno', date:daysAgo(5), status:'Sent to procurement', rfqType:'Import', reason:'Client needs 3 × 7.5 kW borehole pumps, not stocked', lines:[{item:'—', desc:'Submersible borehole pump 6", 7.5 kW', qty:3, price:0, disc:0}], history:[H(5,'Kevin Otieno','Sent to procurement')]},
+    {id:'JR-509', type:'Job requisition', job:'JOB-24823', branch:'RET', raisedBy:'Faith Njeri', date:daysAgo(0), status:'Released', lines:[L('PSW-15',2)], history:[H(0,'Faith Njeri','Requisitioned into JOB-24823'),H(0,'Portal','Released from store')]},
+  ];
+  const now = Date.now(), m = 60000;
+  const ok = (id, op, mins, by, att = 1) => ({id:'TX-' + (5000 + Math.floor(R()*900)), docId:id, op, status:'confirmed', attempts:att, created:now - mins*m, done:now - mins*m + 1400, by, bcRef:'BC/' + id});
+  const sync = [
+    ok('RFQ-0088','Send RFQ to procurement',7200,'Kevin Otieno'),
+    ok('SO-20409','Create sales order',8600,'Kevin Otieno'),
+    ok('PC-0405','Create petty cash',12900,'Kevin Otieno'), ok('PC-0405','Approve petty cash',11500,'Grace Wanjiru'),
+    ok('SQ-10870','Create quote',5700,'Kevin Otieno', 2),
+    ok('PR-0331','Create purchase request',4300,'Lucy Mutheu'),
+    ok('PC-0412','Create petty cash',2800,'Kevin Otieno'),
+    ok('SQ-10882','Create quote',1300,'Kevin Otieno'),
+    ok('FL-0219','Create float',1250,'Samuel Kiprono'),
+    ok('SO-20417','Create sales order',95,'Lucy Mutheu'),
+    ok('PC-0415','Create petty cash',60,'Faith Njeri'),
+    {id:'TX-5991', docId:'JR-509', op:'Post requisition to JOB-24823', status:'failed', attempts:3, created:now - 40*m, by:'Faith Njeri', lastError:BC_ERRORS[0]},
+  ];
+  const users = SEED_USERS.map(([id,name,role,branch,title]) => ({id,name,role,branch,title,active:true}));
+  const audit = [
+    {ts:now - 40*m, user:'Portal', action:'Sync failed', target:'JR-509', detail:BC_ERRORS[0] + ' (3 attempts)'},
+    {ts:now - 60*m, user:'Faith Njeri', action:'Submitted', target:'PC-0415', detail:'Petty cash KSh 14,800'},
+    {ts:now - 95*m, user:'Lucy Mutheu', action:'Placed order', target:'SO-20417', detail:'Held: credit limit'},
+    {ts:now - 1300*m, user:'Kevin Otieno', action:'Created quote', target:'SQ-10882', detail:'Held: discount 15%'},
+  ];
+  const notes = [
+    {to:'Faith Njeri', text:'JR-509 did not reach BC after 3 attempts: record locked by another user. Retry from the document.', doc:'JR-509', ts:now - 40*m, read:false},
+  ];
+  return {v:2, items, customers, ledger, invoices, pos, jobs, warranty, docs, sync, users, roles:JSON.parse(JSON.stringify(DEFAULT_ROLES)), audit, notes,
+    settings:{bcOnline:true, latency:1400, failRate:10, cacheAt:now - 4*m},
+    seq:{SQ:10883, SO:20418, PC:416, FL:220, PR:332, RFQ:89, JR:510, WC:1032, JOB:24831, TX:6000}};
+}
+
+/* ============ state ============ */
+const STORE = 'kazi-portal-v2';
+let DB;
+try { const s = localStorage.getItem(STORE); DB = s ? JSON.parse(s) : null; } catch(e){ DB = null; }
+if (!DB || DB.v !== 2) DB = seed();
+DB.sync.forEach(o => { if (o.status === 'sending') o.status = 'queued'; });
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch(e){} };
+const PREFS_KEY = STORE + '-prefs';
+let prefs = {theme:'system', accent:'teal', density:'comfortable', motion:'on', uid:null, branch:null};
+try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY) || '{}')); } catch(e){}
+const savePrefs = () => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch(e){} };
+const hostTheme = document.documentElement.getAttribute('data-theme');
+function applyPrefs(){
+  const r = document.documentElement;
+  if (prefs.theme === 'system'){ if (hostTheme) r.setAttribute('data-theme', hostTheme); else r.removeAttribute('data-theme'); }
+  else r.setAttribute('data-theme', prefs.theme);
+  if (prefs.accent === 'teal') r.removeAttribute('data-accent'); else r.setAttribute('data-accent', prefs.accent);
+  r.setAttribute('data-density', prefs.density);
+  r.setAttribute('data-motion', prefs.motion);
+}
+applyPrefs();
+
+const state = {view:'home', lastView:null, branch: prefs.branch || 'RET', q:{}, sel:{}, cart:{lines:[], cust:'', kind:'order'}, ssTab:'Petty cash', custTab:'Ledger', salesFilter:'All', syncFilter:'All', adminTab:'Users',
+  modal:null, pop:null, pal:null, itemCat:'All', scanMsg:'', flash:null, errors:{}, lowOnly:false, auditQ:'', licenceUsers:92};
+
+const user = () => DB.users.find(u => u.id === prefs.uid && u.active);
+const role = () => DB.roles[user()?.role];
+const can = p => !!role()?.perms.includes(p);
+const item = no => DB.items.find(i => i.no === no);
+const cust = no => DB.customers.find(c => c.no === no);
+const doc = id => DB.docs.find(d => d.id === id);
+const job = no => DB.jobs.find(j => j.no === no);
+const balance = no => DB.ledger.filter(e => e.cust === no).reduce((s,e) => s + e.amount, 0);
+const lineTotal = l => l.qty * l.price * (1 - (l.disc||0)/100);
+const docTotal = d => d.lines ? d.lines.reduce((s,l) => s + lineTotal(l), 0) : (d.amount || 0);
+const totalStock = it => Object.values(it.stock).reduce((a,b) => a+b, 0);
+const incoming = no => DB.pos.filter(p => p.item === no);
+const nextId = k => k + '-' + String(DB.seq[k]++).padStart(['PC','FL','PR'].includes(k) ? 4 : 0, '0');
+const hist = (d, who, what) => d.history.push({date:todayISO, who, what});
+const canApprove = d => d.status === 'Pending approval' && (can('approvals.manager') || (d.needs === 'approver' && can('approvals.branch')));
+const visibleApprovals = () => DB.docs.filter(canApprove);
+function log(action, target, detail, who){ DB.audit.unshift({ts:Date.now(), user: who || user()?.name || 'Portal', action, target, detail: detail || ''}); if (DB.audit.length > 400) DB.audit.length = 400; }
+function notify(to, text, docId){ DB.notes.unshift({to, text, doc:docId, ts:Date.now(), read:false}); }
+const myNotes = () => DB.notes.filter(n => n.to === user()?.name);
+
+function chip(status){
+  const map = {'Pending approval':'warn','Under assessment':'warn','Open':'info','In progress':'info','Sent to procurement':'info','Approved':'good','Released':'good','Completed':'good','Approved, replace':'good','Approved, repair':'good','Rejected':'bad','Converted':'acc'};
+  return `<span class="chip ${map[status] ?? ''}">${esc(status)}</span>`;
+}
+
+/* ============ toasts ============ */
+function toast(msg, kind = ''){
+  const root = document.getElementById('toastRoot');
+  const el = document.createElement('div'); el.className = 'toast ' + kind; el.textContent = msg; el.setAttribute('role','status');
+  root.appendChild(el); while (root.children.length > 3) root.firstChild.remove();
+  setTimeout(() => { if (motionOn()){ el.style.transition = 'opacity .25s, transform .25s'; el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(() => el.remove(), 260); } else el.remove(); }, 3600);
+}
+
+/* ============ BC sync engine ============ */
+function enqueue(docId, op){
+  const o = {id:'TX-' + (DB.seq.TX++), docId, op, status:'queued', attempts:0, created:Date.now(), nextAt:0, by:user()?.name || 'Portal'};
+  DB.sync.push(o); save(); syncChanged(); return o;
+}
+function syncOf(id){
+  const ops = DB.sync.filter(o => o.docId === id);
+  if (!ops.length) return null;
+  const live = ops.find(o => o.status === 'queued' || o.status === 'sending');
+  if (live) return {k: live.attempts && live.lastError ? 'retry' : 'sending', o:live};
+  const failed = ops.filter(o => o.status === 'failed');
+  if (failed.length) return {k:'failed', o:failed[failed.length-1]};
+  return {k:'ok', o:ops[ops.length-1]};
+}
+function syncChipInner(id){
+  const s = syncOf(id); if (!s) return '';
+  if (s.k === 'sending') return `<span class="chip info"><i class="spin"></i>${DB.settings.bcOnline ? 'Sending to BC' : 'Waiting for BC'}</span>`;
+  if (s.k === 'retry') return `<span class="chip warn"><i class="spin"></i>Retrying ${s.o.attempts}/${RULES.maxAttempts}</span>`;
+  if (s.k === 'failed') return `<span class="chip bad">Not in BC</span>`;
+  return `<span class="chip good">In BC</span>`;
+}
+const syncChip = id => `<span data-sync="${id}">${syncChipInner(id)}</span>`;
+const inflight = new Set();
+function tick(){
+  if (!DB.settings.bcOnline) return;
+  if (inflight.size >= 2) return;
+  const now = Date.now();
+  const o = DB.sync.find(x => x.status === 'queued' && (x.nextAt||0) <= now && !inflight.has(x.id));
+  if (!o) return;
+  o.status = 'sending'; o.attempts++; inflight.add(o.id); syncChanged();
+  const lat = DB.settings.latency * (.6 + Math.random()*.8);
+  setTimeout(() => {
+    inflight.delete(o.id);
+    if (!DB.settings.bcOnline){ o.status = 'queued'; o.attempts--; syncChanged(); return; }
+    if (Math.random()*100 < DB.settings.failRate){
+      o.lastError = BC_ERRORS[Math.floor(Math.random()*BC_ERRORS.length)];
+      if (o.attempts >= RULES.maxAttempts){
+        o.status = 'failed';
+        log('Sync failed', o.docId, `${o.lastError} (${o.attempts} attempts)`, 'Portal');
+        notify(o.by, `${o.docId} did not reach BC after ${o.attempts} attempts: ${o.lastError}. Retry from the document.`, o.docId);
+        if (o.by === user()?.name) toast(`${o.docId} did not reach BC. Open it to retry.`, 'bad');
+      } else { o.status = 'queued'; o.nextAt = Date.now() + 1200 * o.attempts; }
+    } else {
+      o.status = 'confirmed'; o.done = Date.now(); o.bcRef = 'BC/' + o.docId;
+      const d = doc(o.docId); if (d && /order|Release/i.test(o.op) && d.status === 'Released') d.bcRef = d.id;
+      if (o.by === user()?.name) toast(`${o.docId} confirmed in BC`, 'good');
+      pulse(o.docId);
+    }
+    save(); syncChanged();
+  }, lat);
+}
+setInterval(tick, 250);
+function retry(o){ o.status = 'queued'; o.attempts = 0; o.nextAt = 0; o.lastError = ''; log('Retried sync', o.docId, o.op); save(); syncChanged(); }
+function pulse(id){ requestAnimationFrame(() => document.querySelectorAll(`[data-sync="${id}"] .chip`).forEach(c => c.classList.add('pulse'))); }
+function syncChanged(){
+  document.querySelectorAll('[data-sync]').forEach(el => { const h = syncChipInner(el.dataset.sync); if (el.innerHTML !== h) el.innerHTML = h; });
+  renderBanner(); renderNavCounts();
+  if (state.view === 'sync' && !(document.activeElement && document.activeElement.closest('#main input, #main select'))) renderMain(false);
+}
+
+/* ============ rules ============ */
+function aging(no){
+  const es = DB.ledger.filter(e => e.cust === no).sort((a,b) => a.date.localeCompare(b.date));
+  let credit = -es.filter(e => e.amount < 0).reduce((s,e) => s + e.amount, 0);
+  const b = {cur:0, d31:0, d61:0, d90:0};
+  es.filter(e => e.amount > 0).forEach(e => {
+    let open = e.amount; const use = Math.min(open, credit); open -= use; credit -= use;
+    if (open > 0){ const a = ageDays(e.date); if (a <= 30) b.cur += open; else if (a <= 60) b.d31 += open; else if (a <= 90) b.d61 += open; else b.d90 += open; }
+  });
+  return b;
+}
+function evaluate(lines, c, kind, branch){
+  const reasons = [], warnings = [];
+  lines.forEach(l => { if ((l.disc||0) > RULES.maxDiscount) reasons.push(`Line ${l.item}: discount ${l.disc}% is above the ${RULES.maxDiscount}% limit`); });
+  const total = lines.reduce((s,l) => s + lineTotal(l), 0);
+  if (kind === 'order' && c && c.limit > 0){ const bal = balance(c.no); if (bal + total > c.limit) reasons.push(`Credit check: balance ${KES(bal)} plus this order ${KES(total)} is over the ${KES(c.limit)} limit`); }
+  if (kind === 'order' && (!c || c.limit === 0) && lines.length) warnings.push('Cash sale: collect payment before goods leave the store');
+  lines.forEach(l => {
+    const it = item(l.item); if (!it) return;
+    const here = it.stock[branch] || 0;
+    if (l.qty > here){
+      const inc = incoming(l.item)[0];
+      const other = Object.entries(it.stock).filter(([b,q]) => b !== branch && q >= l.qty).map(([b]) => BRANCHES[b]);
+      warnings.push(`${l.item}: only ${here} at ${BRANCHES[branch]}` + (other.length ? `; available at ${other.join(', ')}` : '') + (inc ? `; ${inc.qty} arriving ${fmtD(inc.eta)}` : ''));
+    }
+  });
+  return {reasons, warnings, total};
+}
+function releaseStock(d){ (d.lines || []).forEach(l => { const it = item(l.item); if (it) it.stock[d.branch] = Math.max(0, (it.stock[d.branch]||0) - l.qty); }); }
+function applyRequisition(d){
+  const j = job(d.job); if (!j) return;
+  d.lines.forEach(l => j.entries.push({date:todayISO, type:'Item', ref:l.item, desc:l.desc, qty:l.qty, amount:l.qty*l.price}));
+  releaseStock(d); if (j.status === 'Open') j.status = 'In progress';
+}
+
+/* ============ navigation ============ */
+const NAV = [
+  {grp:'Work'},
+  {id:'home', label:'Home', perm:'dashboard'},
+  {id:'counter', label:'Counter', perm:'counter.use'},
+  {id:'sales', label:'Quotes & orders', perm:'sales.view'},
+  {id:'customers', label:'Customers', perm:'customers.view'},
+  {id:'items', label:'Items & stock', perm:'items.view'},
+  {id:'jobs', label:'Jobs', perm:'jobs.view'},
+  {id:'warranty', label:'Warranty', perm:'warranty.manage'},
+  {id:'self', label:'Self-service', perm:'self.use'},
+  {id:'approvals', label:'Approvals', perm:['approvals.branch','approvals.manager']},
+  {grp:'Admin'},
+  {id:'sync', label:'BC sync', perm:'admin.sync'},
+  {id:'audit', label:'Audit log', perm:'audit.view'},
+  {id:'admin', label:'Users & roles', perm:'admin.roles'},
+];
+const allowed = n => n.id && [].concat(n.perm).some(can);
+function navHtml(){
+  const out = []; let grp = null;
+  NAV.forEach(n => {
+    if (n.grp){ grp = n.grp; return; }
+    if (!allowed(n)) return;
+    if (grp){ out.push(`<div class="grp">${grp}</div>`); grp = null; }
+    out.push(`<a href="#${n.id}" aria-current="${n.id === state.view ? 'page' : 'false'}">${n.label}<span data-count="${n.id}"></span></a>`);
+  });
+  return out.join('');
+}
+function renderNavCounts(){
+  const set = (id, html) => { const el = document.querySelector(`[data-count="${id}"]`); if (el && el.innerHTML !== html) el.innerHTML = html; };
+  const p = visibleApprovals().length; set('approvals', p ? `<span class="count">${p}</span>` : '');
+  const c = state.cart.lines.length; set('counter', c ? `<span class="count acc">${c}</span>` : '');
+  const f = DB.sync.filter(o => o.status === 'failed').length; set('sync', f ? `<span class="count bad">${f}</span>` : '');
+  const bell = document.getElementById('bellDot'); if (bell){ const u = myNotes().filter(n => !n.read).length; bell.hidden = !u; bell.textContent = u; }
+}
+function renderBanner(){
+  const el = document.getElementById('banner'); if (!el) return;
+  const waiting = DB.sync.filter(o => o.status === 'queued' || o.status === 'sending').length;
+  const failed = DB.sync.filter(o => o.status === 'failed' && (o.by === user()?.name || can('admin.sync'))).length;
+  let h = '';
+  if (!DB.settings.bcOnline) h = `<div class="banner"><b>BC is unreachable.</b> Your work is saved in the portal and marked "Waiting for BC". ${waiting} waiting; they send automatically when BC is back.${can('admin.sync') ? ' <button class="btn sm" data-act="go" data-v="sync">Open BC sync</button>' : ''}</div>`;
+  else if (failed) h = `<div class="banner bad"><b>${failed} transaction${failed>1?'s':''} did not reach BC.</b> They are not complete until confirmed. <button class="btn sm" data-act="${can('admin.sync') ? 'go' : 'openFailed'}" data-v="sync">Review</button></div>`;
+  if (el.innerHTML !== h) el.innerHTML = h;
+}
+
+/* ============ shell ============ */
+function renderApp(){
+  const app = document.getElementById('app');
+  const u = user();
+  if (!u){ app.innerHTML = signinView(); document.getElementById('popRoot').innerHTML = ''; return; }
+  const r = role();
+  app.innerHTML = `
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true">${I.drop}</span><b>D&amp;S ERP Portal</b><span class="proto">Prototype · sample data</span></div>
+    <button class="icon-btn searchbtn" data-act="palette" aria-label="Search">${I.search}<span class="lbl">Search everything</span><span class="kbd">Ctrl K</span></button>
+    <div class="ctl branchctl"><label for="branchSel">Branch</label><select id="branchSel" data-in="branch">${Object.entries(BRANCHES).map(([k,v]) => `<option value="${k}" ${k===state.branch?'selected':''}>${v}</option>`).join('')}</select></div>
+    <button class="icon-btn" data-act="pop" data-v="bell" aria-label="Notifications">${I.bell}<span class="dot" id="bellDot" hidden></span></button>
+    <button class="icon-btn" data-act="pop" data-v="settings" aria-label="Display settings">${I.gear}</button>
+    <button class="icon-btn" data-act="pop" data-v="user" aria-label="Account"><span class="avatar">${initials(u.name)}</span><span class="uname">${esc(u.name.split(' ')[0])}</span></button>
+  </header>
+  <div id="banner"></div>
+  <div class="shell">
+    <nav class="side" id="side" aria-label="Modules">${navHtml()}</nav>
+    <main id="main"></main>
+  </div>`;
+  renderBanner(); renderMain(true); renderNavCounts(); renderPop();
+}
+const VIEWS = {};
+function renderMain(animate){
+  const main = document.getElementById('main'); if (!main) return;
+  const first = NAV.find(allowed);
+  if (!NAV.some(n => n.id === state.view && allowed(n))) state.view = first ? first.id : 'home';
+  const side = document.getElementById('side');
+  side.querySelectorAll('a').forEach(a => a.setAttribute('aria-current', a.getAttribute('href') === '#' + state.view ? 'page' : 'false'));
+  const changed = state.lastView !== state.view; state.lastView = state.view;
+  const a = document.activeElement, aid = a && a.id;
+  let sel = null; try { if (a && 'selectionStart' in a) sel = [a.selectionStart, a.selectionEnd]; } catch(e){}
+  main.innerHTML = `<div class="view${(animate || changed) && motionOn() ? ' enter' : ''}">${VIEWS[state.view]()}</div>`;
+  if (aid){ const n = document.getElementById(aid); if (n && n !== document.activeElement && main.contains(n)){ n.focus({preventScroll:true}); if (sel && sel[0] != null) try { n.setSelectionRange(sel[0], sel[1]); } catch(e){} } }
+  if (state.flash){ state.flash = null; }
+  if (changed && state.view === 'home') countUp();
+  renderNavCounts();
+}
+function render(){ renderMain(false); renderModal(); }
+function go(v){ state.view = v; state.scanMsg = ''; state.pop = null; renderPop(); if (location.hash !== '#' + v) history.replaceState(null, '', '#' + v); renderMain(true); window.scrollTo({top:0}); }
+function countUp(){
+  if (!motionOn()) return;
+  document.querySelectorAll('[data-countup]').forEach(el => {
+    const to = +el.dataset.countup, t0 = performance.now(), dur = 600;
+    const step = t => { const p = Math.min(1, (t - t0)/dur), e = 1 - Math.pow(1-p, 3); el.textContent = Math.round(to*e); if (p < 1) requestAnimationFrame(step); };
+    el.textContent = '0'; requestAnimationFrame(step);
+  });
+}
+
+/* ============ sign-in ============ */
+function signinView(){
+  const byRole = Object.keys(DB.roles);
+  return `<div class="signin"><div class="signin-box">
+    <div style="display:flex;align-items:center;gap:12px"><span class="mark" style="width:38px;height:38px;border-radius:9px">${I.drop}</span><div><div class="eyebrow">Prototype · sample data</div><h1>Sign in to D&amp;S ERP Portal</h1></div></div>
+    <p class="muted" style="margin:0;max-width:62ch">Pick a person to sign in as. What you see depends on their role; an admin can change roles and permissions under Users & roles. In production this screen is replaced by company single sign-on.</p>
+    <div class="users">${DB.users.slice().sort((a,b) => byRole.indexOf(a.role) - byRole.indexOf(b.role)).map(u => `<button class="ucard" data-act="signin" data-id="${u.id}" ${u.active ? '' : 'disabled'}>
+      <span class="top2"><span class="avatar">${initials(u.name)}</span><span><b>${esc(u.name)}</b><br><span class="muted" style="font-size:12px">${esc(u.title)}</span></span></span>
+      <span>${u.active ? `<span class="chip acc">${esc(DB.roles[u.role]?.label || u.role)}</span>` : '<span class="chip bad">Deactivated</span>'}</span></button>`).join('')}</div>
+  </div></div>`;
+}
+
+/* ============ views ============ */
+VIEWS.home = () => {
+  const u = user(), r = role();
+  const pend = visibleApprovals().length;
+  const mine = DB.docs.filter(d => d.raisedBy === u.name && ['Pending approval','Open'].includes(d.status)).length;
+  const myNotIn = DB.docs.filter(d => d.raisedBy === u.name && syncOf(d.id) && syncOf(d.id).k !== 'ok').length;
+  const openJobs = DB.jobs.filter(j => j.status !== 'Completed' && j.branch === state.branch).length;
+  const low = DB.items.filter(i => i.stock[state.branch] <= 2).length;
+  const hour = new Date().getHours(); const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const tile = (v, l, to, extra = '') => `<button class="tile" ${to ? `data-act="go" data-v="${to}"` : ''} ${extra}><span class="v" data-countup="${v}">${v}</span><span class="l">${l}</span></button>`;
+  const tiles = [
+    (can('approvals.branch') || can('approvals.manager')) ? tile(pend, 'Waiting for your approval', 'approvals') : tile(DB.docs.filter(d => d.raisedBy === u.name && d.status === 'Approved').length, 'Your requests approved', 'self'),
+    tile(mine, 'Your open documents', can('sales.view') ? 'sales' : 'self'),
+    tile(myNotIn, 'Your documents not yet in BC', can('admin.sync') ? 'sync' : null),
+    can('jobs.view') ? tile(openJobs, 'Open jobs, ' + esc(BRANCHES[state.branch]), 'jobs') : '',
+    tile(low, 'Items at 2 or fewer here', 'items', 'data-low="1"'),
+  ].filter(Boolean).slice(0,4).join('');
+  const acts = DB.docs.flatMap(d => d.history.map(h => ({...h, id:d.id, type:d.type}))).sort((a,b) => b.date.localeCompare(a.date)).slice(0,7);
+  const phases = [
+    {n:1, t:'Light users', p:'Viewing and approvals. Portal replaces their BC licence first.'},
+    {n:2, t:'Sales engineers', p:'Once quotes, orders, discounts and credit checks are live.'},
+    {n:3, t:'Service engineers', p:'Once job requisitions and warranty run on the portal.'},
+    {n:4, t:'Stays on BC', p:'Finance and heavy users: journals, GL, debtors and creditors.'},
+  ];
+  const granted = PERMS.flatMap(([,ps]) => ps).filter(([k]) => can(k));
+  return `
+  <div class="head"><div><div class="eyebrow">${esc(r.label)} · ${esc(u.title)}</div><h1>${greet}, ${esc(u.name.split(' ')[0])}</h1>
+  <p>Nothing counts as done until BC confirms it. Every document shows its BC status: <span class="chip info"><i class="spin"></i>Sending to BC</span> then <span class="chip good">In BC</span>.</p></div></div>
+  <div class="tiles">${tiles}</div>
+  <div class="grid g2">
+    <section class="card"><h2>Your access</h2>
+      <ul class="hist">${granted.map(([,l]) => `<li style="grid-template-columns:16px 1fr"><span style="color:var(--good)">✓</span><span>${esc(l)}</span></li>`).join('')}</ul>
+      <p class="muted" style="font-size:12px;margin:12px 0 0">Set by the ${esc(r.label)} role. An admin can change it under Users & roles.</p>
+    </section>
+    <section class="card"><h2>Rules the portal applies</h2>
+      <div class="rule"><span class="k">BC-CONFIRM</span><span>A document is only "In BC" after BC accepts it. Failed sends retry ${RULES.maxAttempts} times, then alert the person who raised it.</span></div>
+      <div class="rule"><span class="k">DISC&gt;${RULES.maxDiscount}%</span><span>Any line discount above ${RULES.maxDiscount}% goes to a sales manager.</span></div>
+      <div class="rule"><span class="k">CREDIT</span><span>An order that takes an account over its credit limit is held for a manager.</span></div>
+      <div class="rule"><span class="k">STOCK</span><span>When the branch is short, the portal shows other branches with stock and the next arrival.</span></div>
+      <div class="rule"><span class="k">PETTY&gt;10K</span><span>Petty cash above ${KES(RULES.pettyCashApproverLimit)} needs a manager. Floats switch at ${KES(RULES.floatApproverLimit)}.</span></div>
+      <div class="rule"><span class="k">REQ&gt;50K</span><span>Job requisitions up to ${KES(RULES.reqAutoLimit)} release straight to the store; above that a manager approves.</span></div>
+      <div class="rule"><span class="k">WARRANTY</span><span>Claims are checked against the invoice date: ${RULES.warrantyMonths} months covered.</span></div>
+    </section>
+  </div>
+  <section class="card"><h2 style="margin-bottom:12px">Rollout</h2>
+    <div class="phase">${phases.map(p => `<div class="${p.n === r.phase ? 'on' : ''}"><span class="eyebrow">${p.n < 4 ? 'Phase ' + p.n : 'No move'}</span><b>${p.t}</b><p>${p.p}</p></div>`).join('')}</div>
+  </section>
+  <section class="card flush"><div class="cardhead"><h2>Recent activity</h2></div>
+    <div class="scroll"><table class="t"><thead><tr><th>Date</th><th>Document</th><th>Who</th><th>What happened</th><th>BC</th></tr></thead><tbody>
+    ${acts.map(a => `<tr class="click" data-act="open" data-id="${a.id}"><td class="muted">${fmtD(a.date)}</td><td><span class="mono">${a.id}</span> <span class="muted">${esc(a.type)}</span></td><td>${esc(a.who)}</td><td>${esc(a.what)}</td><td>${syncChip(a.id)}</td></tr>`).join('')}
+    </tbody></table></div></section>`;
+};
+
+VIEWS.customers = () => {
+  const q = (state.q.cust || '').toLowerCase();
+  const list = DB.customers.filter(c => !q || (c.name + ' ' + c.no + ' ' + c.phone).toLowerCase().includes(q));
+  if (!state.sel.cust || !cust(state.sel.cust)) state.sel.cust = list[0]?.no;
+  const c = cust(state.sel.cust), led = can('customers.ledger');
+  return `
+  <div class="head"><div><h1>Customers</h1><p>Search by name, number or phone. ${led ? 'Ledger, statement and purchase history are on each customer.' : 'Purchase history is on each customer.'}</p></div>
+  <span class="cache" title="Read from the portal's copy of BC data, refreshed on a schedule">Portal copy refreshed ${ago(DB.settings.cacheAt)}</span></div>
+  <div class="split">
+    <section class="card flush">
+      <div class="searchbar"><input type="search" id="custQ" data-in="q" data-k="cust" placeholder="Search customers" value="${esc(state.q.cust||'')}" aria-label="Search customers"></div>
+      <div class="list">${list.map(x => `<button class="li" data-act="sel" data-k="cust" data-id="${x.no}" aria-selected="${x.no === state.sel.cust}">
+        <span><b>${esc(x.name)}</b><br><span class="s mono">${x.no}</span> <span class="s">· ${esc(x.group)}</span></span>
+        <span class="r">${led ? `<span class="num">${KES(balance(x.no))}</span>` : ''}</span></button>`).join('') || '<div class="empty">No customers match.</div>'}</div>
+    </section>
+    <div class="grid" id="detail">${c ? customerDetail(c) : '<div class="card empty">Pick a customer.</div>'}</div>
+  </div>`;
+};
+function customerDetail(c){
+  const led = can('customers.ledger');
+  const bal = balance(c.no), util = c.limit ? bal / c.limit : 0;
+  const tabs = led ? ['Ledger','Statement','Purchases'] : ['Purchases'];
+  if (!tabs.includes(state.custTab)) state.custTab = tabs[0];
+  let body = '';
+  if (state.custTab === 'Ledger'){
+    const es = DB.ledger.filter(e => e.cust === c.no).sort((a,b) => a.date.localeCompare(b.date));
+    let run = 0; const rows = es.map(e => ({...e, run: run += e.amount})).reverse();
+    body = `<div class="scroll"><table class="t"><thead><tr><th>Date</th><th>Type</th><th>Document</th><th>Details</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead><tbody>
+      ${rows.map(e => `<tr><td class="muted">${fmtD(e.date)}</td><td>${e.type}</td><td class="mono">${e.doc}</td><td>${esc(e.desc)}</td><td class="num">${e.amount > 0 ? KES(e.amount) : ''}</td><td class="num">${e.amount < 0 ? KES(-e.amount) : ''}</td><td class="num">${KES(e.run)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  } else if (state.custTab === 'Statement'){
+    const days = +(state.q.stmt || 90), from = daysAgo(days);
+    const es = DB.ledger.filter(e => e.cust === c.no).sort((a,b) => a.date.localeCompare(b.date));
+    const opening = es.filter(e => e.date < from).reduce((s,e) => s + e.amount, 0);
+    let run = opening; const rows = es.filter(e => e.date >= from).map(e => ({...e, run: run += e.amount}));
+    const a = aging(c.no);
+    body = `<div style="padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+      <div class="seg" role="group" aria-label="Statement period">${[30,90,180].map(d => `<button data-act="stmt" data-v="${d}" aria-pressed="${d===days}">Last ${d} days</button>`).join('')}</div>
+      <span class="muted">${fmtD(from)} to ${fmtD(todayISO)}</span></div>
+      <div class="scroll"><table class="t"><thead><tr><th>Date</th><th>Document</th><th>Details</th><th class="num">Amount</th><th class="num">Balance</th></tr></thead><tbody>
+      <tr><td class="muted">${fmtD(from)}</td><td></td><td><b>Opening balance</b></td><td></td><td class="num"><b>${KES(opening)}</b></td></tr>
+      ${rows.map(e => `<tr><td class="muted">${fmtD(e.date)}</td><td class="mono">${e.doc}</td><td>${e.type}: ${esc(e.desc)}</td><td class="num">${KES(e.amount)}</td><td class="num">${KES(e.run)}</td></tr>`).join('')}
+      <tr><td></td><td></td><td><b>Closing balance</b></td><td></td><td class="num"><b>${KES(run)}</b></td></tr>
+      </tbody></table></div>
+      <div class="scroll" style="border-top:1px solid var(--line)"><table class="t"><thead><tr><th class="num">Current</th><th class="num">31–60 days</th><th class="num">61–90 days</th><th class="num">Over 90 days</th></tr></thead>
+      <tbody><tr><td class="num">${KES(a.cur)}</td><td class="num">${KES(a.d31)}</td><td class="num" ${a.d61?'style="color:var(--warn)"':''}>${KES(a.d61)}</td><td class="num" ${a.d90?'style="color:var(--bad);font-weight:600"':''}>${KES(a.d90)}</td></tr></tbody></table></div>`;
+  } else {
+    const rows = DB.invoices.filter(i => i.cust === c.no).sort((a,b) => b.date.localeCompare(a.date)).flatMap(i => i.lines.map(l => ({...l, date:i.date, doc:i.doc, sp:i.salesperson})));
+    body = rows.length ? `<div class="scroll"><table class="t"><thead><tr><th>Date</th><th>Invoice</th><th>Item</th><th class="num">Qty</th><th class="num">Price</th><th>Sold by</th></tr></thead><tbody>
+      ${rows.map(l => `<tr><td class="muted">${fmtD(l.date)}</td><td class="mono">${l.doc}</td><td><span class="mono">${l.item}</span><br><span class="muted">${esc(l.desc)}</span></td><td class="num">${l.qty}</td><td class="num">${KES(l.price)}</td><td>${esc(l.sp)}</td></tr>`).join('')}
+      </tbody></table></div>` : '<div class="empty">No purchases on record.</div>';
+  }
+  const lastBuy = DB.invoices.filter(i => i.cust === c.no).sort((a,b) => b.date.localeCompare(a.date))[0];
+  return `
+  <section class="card">
+    <div class="head" style="margin-bottom:14px"><div><div class="eyebrow mono">${c.no}</div><h2 style="font-size:20px">${esc(c.name)}</h2></div>
+    ${can('sales.create') ? `<button class="btn primary" data-act="sellTo" data-id="${c.no}">New sale for this customer</button>` : ''}</div>
+    <div class="kv">
+      <div><span>Group</span><b>${esc(c.group)}</b></div>
+      <div><span>Phone</span><b class="mono">${esc(c.phone)}</b></div>
+      <div><span>Home branch</span><b>${esc(BRANCHES[c.branch])}</b></div>
+      <div><span>Payment terms</span><b>${esc(c.terms)}</b></div>
+      <div><span>Last purchase</span><b>${lastBuy ? fmtD(lastBuy.date) + ', ' + esc(lastBuy.salesperson) : '—'}</b></div>
+    </div>
+    ${led ? (c.limit ? `<div style="margin-top:16px;display:grid;gap:6px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span><span class="muted">Balance</span> <b class="num">${KES(bal)}</b></span><span><span class="muted">Limit</span> <b class="num">${KES(c.limit)}</b></span><span><span class="muted">Available</span> <b class="num" style="color:${c.limit-bal<0?'var(--bad)':'var(--good)'}">${KES(c.limit - bal)}</b></span></div>
+      <div class="bar ${util > .9 ? 'bad' : util > .7 ? 'warn' : ''}"><i style="width:${Math.min(100, Math.max(0, util*100)).toFixed(0)}%"></i></div></div>`
+      : `<div class="note info" style="margin-top:14px">Cash customer. No credit limit; payment is taken at the counter.</div>`) : ''}
+  </section>
+  <section class="card flush">
+    <div class="tabs" role="tablist" style="padding:0 8px">${tabs.map(t => `<button role="tab" aria-selected="${t === state.custTab}" data-act="custTab" data-v="${t}">${t}</button>`).join('')}</div>
+    ${body}
+  </section>`;
+}
+
+VIEWS.items = () => {
+  const q = (state.q.item || '').toLowerCase();
+  const cats = ['All', ...new Set(DB.items.map(i => i.cat))];
+  const list = DB.items.filter(i => (state.itemCat === 'All' || i.cat === state.itemCat) && (!q || (i.no + ' ' + i.desc + ' ' + i.barcode).toLowerCase().includes(q)) && (!state.lowOnly || i.stock[state.branch] <= 2));
+  if (!state.sel.item || !item(state.sel.item)) state.sel.item = list[0]?.no;
+  const it = item(state.sel.item);
+  return `
+  <div class="head"><div><h1>Items & stock</h1><p>Prices, stock in every branch, and what is on order with arrival dates.${can('items.cost') ? ' Cost and margin are shown for your role.' : ''}</p></div>
+  <span class="cache">Portal copy refreshed ${ago(DB.settings.cacheAt)}</span></div>
+  <div class="split">
+    <section class="card flush">
+      <div class="searchbar"><input type="search" id="itemQ" data-in="q" data-k="item" placeholder="Code, description or barcode" value="${esc(state.q.item||'')}" aria-label="Search items">
+        <select id="catSel" data-in="cat" aria-label="Category">${cats.map(c => `<option ${c===state.itemCat?'selected':''}>${c}</option>`).join('')}</select>
+        ${state.lowOnly ? `<button class="btn sm" data-act="clearLow">Low stock only ✕</button>` : ''}</div>
+      <div class="list">${list.map(x => `<button class="li" data-act="sel" data-k="item" data-id="${x.no}" aria-selected="${x.no === state.sel.item}">
+        <span><span class="mono" style="color:var(--accent)">${x.no}</span><br><span class="s">${esc(x.desc)}</span></span>
+        <span class="r"><span class="num">${KES(x.price)}</span><br><span class="s">${x.stock[state.branch]} here</span></span></button>`).join('') || '<div class="empty">No items match.</div>'}</div>
+    </section>
+    <div class="grid">${it ? itemDetail(it) : '<div class="card empty">Pick an item.</div>'}</div>
+  </div>`;
+};
+function itemDetail(it){
+  const inc = incoming(it.no), margin = (it.price - it.cost) / it.price * 100;
+  return `
+  <section class="card">
+    <div class="head" style="margin-bottom:14px"><div><div class="eyebrow mono">${it.no} · ${esc(it.cat)}</div><h2 style="font-size:20px">${esc(it.desc)}</h2></div>
+    ${can('counter.use') ? `<button class="btn primary" data-act="addItem" data-id="${it.no}">Add to counter</button>` : ''}</div>
+    <div class="kv">
+      <div><span>Unit price (incl. VAT)</span><b class="num" style="font-size:18px;font-family:var(--f-display)">${KES(it.price)}</b></div>
+      ${can('items.cost') ? `<div><span>Unit cost</span><b class="num">${KES(it.cost)}</b></div><div><span>Margin</span><b style="color:${margin < 30 ? 'var(--warn)' : 'var(--good)'}">${margin.toFixed(1)}%</b></div>` : ''}
+      <div><span>Unit of measure</span><b>${it.uom === 'M' ? 'Metre' : 'Piece'}</b></div>
+      <div><span>Barcode</span><b class="mono">${it.barcode}</b></div>
+      <div><span>Total in stock</span><b class="num">${totalStock(it).toLocaleString()}${it.uom === 'M' ? ' m' : ''}</b></div>
+    </div>
+  </section>
+  <section class="card flush"><div class="cardhead"><h3>Stock by branch</h3></div>
+    <div class="scroll"><table class="t"><thead><tr><th>Branch</th><th class="num">On hand</th><th>Status</th></tr></thead><tbody>
+    ${Object.entries(it.stock).map(([b,q]) => `<tr class="${b === state.branch ? 'here' : ''}"><td>${esc(BRANCHES[b])}${b === state.branch ? ' <span class="muted">(selected)</span>' : ''}</td><td class="num">${q.toLocaleString()}</td><td>${q === 0 ? '<span class="chip bad">Out</span>' : q <= 2 ? '<span class="chip warn">Low</span>' : '<span class="chip good">In stock</span>'}</td></tr>`).join('')}
+    </tbody></table></div></section>
+  <section class="card flush"><div class="cardhead"><h3>Incoming</h3></div>
+    ${inc.length ? `<div class="scroll"><table class="t"><thead><tr><th>Order</th><th class="num">Qty</th><th>Source</th><th>Status</th><th>Expected</th></tr></thead><tbody>
+    ${inc.map(p => `<tr><td class="mono">${p.po}</td><td class="num">${p.qty.toLocaleString()}</td><td>${esc(p.vendor)}</td><td>${chip(p.status)}</td><td><b>${fmtD(p.eta)}</b> <span class="muted">(${-ageDays(p.eta)} days)</span></td></tr>`).join('')}
+    </tbody></table></div>` : '<div class="empty" style="padding:16px">Nothing on order.</div>'}</section>`;
+}
+
+VIEWS.counter = () => {
+  const q = (state.q.scan || '').trim().toLowerCase();
+  const hits = q ? DB.items.filter(i => (i.no + ' ' + i.desc + ' ' + i.barcode).toLowerCase().includes(q)).slice(0,8) : [];
+  const popular = ['PKM60','CPM158','PT-24','PSW-15','GV-25','FLT-C05','CHL-1K','RO-75'].map(item);
+  const cart = state.cart, c = cust(cart.cust);
+  const ev = evaluate(cart.lines, c, cart.kind, state.branch);
+  const canSell = can('sales.create');
+  return `
+  <div class="head"><div><h1>Counter</h1><p>Scan or type a barcode or code and press Enter. A USB or Bluetooth scanner types into this box. Kits add a full set of items in one tap.</p></div></div>
+  <div class="counter">
+    <div class="grid">
+      <section class="card">
+        <form class="scan" data-form="scan" autocomplete="off"><input type="search" id="scanQ" data-in="q" data-k="scan" placeholder="Scan barcode or type code" value="${esc(state.q.scan||'')}" aria-label="Scan or search item"><button class="btn primary" type="submit">Add</button></form>
+        ${state.scanMsg ? `<div class="note bad" style="margin-top:10px">${esc(state.scanMsg)}</div>` : ''}
+        <div class="muted" style="font-size:12px;margin-top:8px">Try barcode <span class="mono">${DB.items[0].barcode}</span> or code <span class="mono">SUB4-15</span>.</div>
+        ${hits.length ? `<div class="quick" style="margin-top:12px">${hits.map(qiBtn).join('')}</div>` : ''}
+      </section>
+      <section class="card"><h3>Kits</h3><div class="tpls">${TEMPLATES.map(t => `<button class="tpl" data-act="tpl" data-id="${t.id}"><b>${esc(t.name)}</b><span>${esc(t.note)}</span><span class="num" style="text-align:left;color:var(--ink)">${KES(t.lines.reduce((s,[n,q]) => s + item(n).price*q, 0))}</span></button>`).join('')}</div></section>
+      <section class="card"><h3>Fast movers</h3><div class="quick">${popular.map(qiBtn).join('')}</div></section>
+    </div>
+    <section class="card cart" aria-label="Current sale">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>Current sale</h2>
+        <div class="seg" role="group" aria-label="Document type">${['order','quote'].map(k => `<button aria-pressed="${cart.kind===k}" data-act="kind" data-v="${k}">${k === 'order' ? 'Order' : 'Quote'}</button>`).join('')}</div></div>
+      <div class="field" style="margin:10px 0"><label for="cartCust">Customer</label>
+        <select id="cartCust" data-in="cartCust"><option value="">Walk-in customer (cash)</option>${DB.customers.map(x => `<option value="${x.no}" ${x.no===cart.cust?'selected':''}>${esc(x.name)} · ${x.no}</option>`).join('')}</select>
+        ${c && c.limit && can('customers.ledger') ? `<span class="muted" style="font-size:12px">Balance ${KES(balance(c.no))} of ${KES(c.limit)} limit</span>` : ''}</div>
+      ${cart.lines.length ? cart.lines.map((l,i) => `<div class="cl ${state.flash === l.item ? 'flash' : ''}">
+          <div><span class="mono" style="color:var(--accent)">${l.item}</span> ${esc(l.desc)}</div><div class="num"><b>${KES(lineTotal(l))}</b></div>
+          <div class="ctrls"><span class="step"><button data-act="qty" data-i="${i}" data-d="-1" aria-label="Less">−</button><input type="number" id="q${i}" min="1" value="${l.qty}" data-in="lineQty" data-i="${i}" aria-label="Quantity"><button data-act="qty" data-i="${i}" data-d="1" aria-label="More">+</button></span>
+          × ${KES(l.price)}
+          <label>Disc % <input type="number" id="d${i}" min="0" max="100" value="${l.disc||0}" data-in="lineDisc" data-i="${i}"></label>
+          <button class="btn sm danger" data-act="rm" data-i="${i}">Remove</button></div></div>`).join('')
+        : '<div class="empty">No items yet. Scan, tap a fast mover or pick a kit.</div>'}
+      ${ev.reasons.length ? `<div class="note warn" style="margin-top:12px"><b>Will go for approval</b><ul>${ev.reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>` : ''}
+      ${ev.warnings.length ? `<div class="note info" style="margin-top:10px"><ul style="margin:0">${ev.warnings.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>` : ''}
+      <div class="total"><span class="muted">${cart.lines.length} line${cart.lines.length===1?'':'s'}</span><b>${KES(ev.total)}</b></div>
+      <div class="btns" style="margin-top:12px"><button class="btn primary" data-act="submitSale" ${cart.lines.length && canSell ? '' : 'disabled'}>${cart.kind === 'order' ? (ev.reasons.length ? 'Place order for approval' : 'Place order') : (ev.reasons.length ? 'Send quote for approval' : 'Save quote')}</button>
+        <button class="btn" data-act="clearCart" ${cart.lines.length ? '' : 'disabled'}>Clear</button></div>
+      ${canSell ? '' : '<p class="muted" style="font-size:12px;margin:8px 0 0">Your role can build a sale but not place it.</p>'}
+    </section>
+  </div>`;
+};
+const qiBtn = it => `<button class="qi" data-act="addItem" data-id="${it.no}"><span class="c">${it.no}</span><span class="d">${esc(it.desc)}</span><span class="p">${KES(it.price)} · ${it.stock[state.branch]} here</span></button>`;
+
+VIEWS.sales = () => {
+  const f = state.salesFilter;
+  const list = DB.docs.filter(d => d.type === 'Quote' || d.type === 'Sales order').filter(d => f === 'All' || (f === 'Quotes' ? d.type === 'Quote' : f === 'Orders' ? d.type === 'Sales order' : d.status === 'Pending approval'));
+  return `
+  <div class="head"><div><h1>Quotes & orders</h1><p>Quotes convert to orders in one step. Orders that pass the rules are released and sent to BC.</p></div>
+    ${can('counter.use') ? '<button class="btn primary" data-act="go" data-v="counter">New sale</button>' : ''}</div>
+  <div class="tabs" role="tablist">${['All','Quotes','Orders','Awaiting approval'].map(t => `<button role="tab" aria-selected="${t===f}" data-act="salesFilter" data-v="${t}">${t}</button>`).join('')}</div>
+  <section class="card flush"><div class="scroll"><table class="t"><thead><tr><th>Number</th><th>Type</th><th>Customer</th><th>Date</th><th>Raised by</th><th class="num">Total</th><th>Status</th><th>BC</th></tr></thead><tbody>
+  ${list.map(d => `<tr class="click" data-act="open" data-id="${d.id}"><td class="mono">${d.id}</td><td>${d.type}</td><td>${esc(cust(d.cust)?.name || 'Walk-in customer')}</td><td class="muted">${fmtD(d.date)}</td><td>${esc(d.raisedBy)}</td><td class="num">${KES(docTotal(d))}</td><td>${chip(d.status)}</td><td>${syncChip(d.id)}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">Nothing here yet.</td></tr>'}
+  </tbody></table></div></section>`;
+};
+
+VIEWS.jobs = () => {
+  const q = (state.q.job || '').toLowerCase();
+  const list = DB.jobs.filter(j => !q || (j.no + ' ' + j.desc + ' ' + (cust(j.cust)?.name||'') + ' ' + j.engineer).toLowerCase().includes(q)).sort((a,b) => b.opened.localeCompare(a.opened));
+  if (!state.sel.job || !job(state.sel.job)) state.sel.job = list[0]?.no;
+  const j = job(state.sel.job);
+  return `
+  <div class="head"><div><h1>Jobs</h1><p>${can('jobs.requisition') ? 'View job entries and requisition items into a job. Small requisitions release straight to the store.' : 'View-only for your role: entries, dates, quantities and attachments.'}</p></div></div>
+  <div class="split">
+    <section class="card flush">
+      <div class="searchbar"><input type="search" id="jobQ" data-in="q" data-k="job" placeholder="Job, customer or engineer" value="${esc(state.q.job||'')}" aria-label="Search jobs"></div>
+      <div class="list">${list.map(x => `<button class="li" data-act="sel" data-k="job" data-id="${x.no}" aria-selected="${x.no === state.sel.job}">
+        <span><span class="mono" style="color:var(--accent)">${x.no}</span><br><span>${esc(x.desc)}</span><br><span class="s">${esc(cust(x.cust)?.name)} · ${esc(BRANCHES[x.branch])}</span></span>
+        <span class="r">${chip(x.status)}</span></button>`).join('') || '<div class="empty">No jobs match.</div>'}</div>
+    </section>
+    <div class="grid">${j ? jobDetail(j) : '<div class="card empty">Pick a job.</div>'}</div>
+  </div>`;
+};
+function jobDetail(j){
+  const tot = j.entries.reduce((s,e) => s + e.amount, 0);
+  const reqs = DB.docs.filter(d => d.type === 'Job requisition' && d.job === j.no);
+  const er = state.errors.req || {};
+  return `
+  <section class="card">
+    <div class="eyebrow mono">${j.no}</div><h2 style="font-size:20px;margin-bottom:12px">${esc(j.desc)}</h2>
+    <div class="kv">
+      <div><span>Customer</span><b>${esc(cust(j.cust)?.name)}</b></div>
+      <div><span>Branch</span><b>${esc(BRANCHES[j.branch])}</b></div>
+      <div><span>Engineer</span><b>${esc(j.engineer)}</b></div>
+      <div><span>Opened</span><b>${fmtD(j.opened)}</b></div>
+      <div><span>Status</span><b>${chip(j.status)}</b></div>
+      <div><span>Posted to job</span><b class="num">${KES(tot)}</b></div>
+    </div>
+  </section>
+  <section class="card flush"><div class="cardhead"><h3>Ledger entries</h3></div>
+    ${j.entries.length ? `<div class="scroll"><table class="t"><thead><tr><th>Date</th><th>Type</th><th>Ref</th><th>Description</th><th class="num">Qty</th><th class="num">Amount</th></tr></thead><tbody>
+    ${j.entries.slice().reverse().map(e => `<tr><td class="muted">${fmtD(e.date)}</td><td>${e.type}</td><td class="mono">${e.ref}</td><td>${esc(e.desc)}</td><td class="num">${e.qty}</td><td class="num">${KES(e.amount)}</td></tr>`).join('')}
+    </tbody></table></div>` : '<div class="empty" style="padding:16px">Nothing posted yet.</div>'}</section>
+  <section class="card"><h3>Attachments</h3><div class="btns">${j.attachments.length ? j.attachments.map(a => `<span class="chip info" style="font-weight:500">📎 ${esc(a)}</span>`).join('') : '<span class="muted">None</span>'}</div></section>
+  ${can('jobs.requisition') && j.status !== 'Completed' ? `<section class="card"><h3>Requisition items into this job</h3>
+    <form class="form" data-form="req" novalidate>
+      <div class="field wide"><label for="reqItem">Item</label><select id="reqItem" name="item">${DB.items.map(i => `<option value="${i.no}">${i.no} · ${esc(i.desc)} · ${i.stock[j.branch]} at ${esc(BRANCHES[j.branch])}</option>`).join('')}</select></div>
+      <div class="field ${er.qty ? 'invalid' : ''}"><label for="reqQty">Quantity</label><input type="number" id="reqQty" name="qty" min="1" value="1">${er.qty ? `<span class="err">${er.qty}</span>` : ''}</div>
+      <div class="field" style="justify-content:flex-end"><button class="btn primary" type="submit">Requisition</button></div>
+    </form>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">Up to ${KES(RULES.reqAutoLimit)} releases from the ${esc(BRANCHES[j.branch])} store at once; above that a manager approves.</p></section>` : ''}
+  ${reqs.length ? `<section class="card flush"><div class="cardhead"><h3>Requisitions</h3></div><div class="scroll"><table class="t"><tbody>
+    ${reqs.map(d => `<tr class="click" data-act="open" data-id="${d.id}"><td class="mono">${d.id}</td><td>${esc(d.lines.map(l => l.qty + ' × ' + l.item).join(', '))}</td><td class="num">${KES(docTotal(d))}</td><td>${chip(d.status)}</td><td>${syncChip(d.id)}</td></tr>`).join('')}
+  </tbody></table></div></section>` : ''}`;
+}
+
+VIEWS.warranty = () => {
+  const w = state.w || {cust:'C10102', item:'PKM60', receipt:'', serial:'', fault:''};
+  const er = state.errors.warranty || {};
+  return `
+  <div class="head"><div><h1>Warranty</h1><p>The portal finds the customer's invoice for the item and checks it against the ${RULES.warrantyMonths}-month warranty before the claim is logged. Each claim opens an assessment job.</p></div></div>
+  <div class="grid g2" style="align-items:start">
+    <section class="card"><h2>New claim</h2>
+      <form class="form" data-form="warranty" novalidate style="margin-top:10px">
+        <div class="field wide"><label for="wCust">Customer</label><select id="wCust" name="cust" data-in="wCheck">${DB.customers.map(c => `<option value="${c.no}" ${c.no===w.cust?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+        <div class="field wide"><label for="wItem">Item</label><select id="wItem" name="item" data-in="wCheck">${DB.items.map(i => `<option value="${i.no}" ${i.no===w.item?'selected':''}>${i.no} · ${esc(i.desc)}</option>`).join('')}</select></div>
+        <div class="field ${er.serial ? 'invalid' : ''}"><label for="wSerial">Serial number</label><input type="text" id="wSerial" name="serial" data-in="wText" value="${esc(w.serial)}" placeholder="e.g. PK60-2250019">${er.serial ? `<span class="err">${er.serial}</span>` : ''}</div>
+        <div class="field"><label for="wDate">Receipt date (if no invoice)</label><input type="date" id="wDate" name="receipt" data-in="wCheck" value="${w.receipt}"></div>
+        <div class="field wide ${er.fault ? 'invalid' : ''}"><label for="wFault">Fault reported</label><textarea id="wFault" name="fault" data-in="wText" rows="2" placeholder="What the customer says is wrong">${esc(w.fault)}</textarea>${er.fault ? `<span class="err">${er.fault}</span>` : ''}</div>
+        <div class="wide">${warrantyCheckHtml(w)}</div>
+        <div class="wide btns"><button class="btn primary" type="submit">Log claim and open job</button></div>
+      </form></section>
+    <section class="card flush"><div class="cardhead"><h2>Claims</h2></div>
+      <div class="scroll"><table class="t"><thead><tr><th>Claim</th><th>Customer · item</th><th>Cover</th><th>Status</th></tr></thead><tbody>
+      ${DB.warranty.slice().sort((a,b) => b.date.localeCompare(a.date)).map(x => `<tr class="click" data-act="openW" data-id="${x.no}"><td class="mono">${x.no}</td><td>${esc(cust(x.cust)?.name)}<br><span class="muted"><span class="mono">${x.item}</span> · ${esc(x.fault)}</span></td><td>${x.eligible ? '<span class="chip good">In warranty</span>' : '<span class="chip bad">Expired</span>'}</td><td>${chip(x.status)}</td></tr>`).join('')}
+      </tbody></table></div></section>
+  </div>`;
+};
+function warrantyLookup(cno, ino, receipt){
+  const inv = DB.invoices.filter(i => i.cust === cno && i.lines.some(l => l.item === ino)).sort((a,b) => b.date.localeCompare(a.date))[0];
+  const date = inv ? inv.date : receipt || '';
+  const src = inv ? 'Invoice ' + inv.doc : receipt ? 'Customer receipt (verify the original)' : '';
+  if (!date) return {found:false};
+  const months = ageDays(date) / 30.44;
+  return {found:true, date, src, eligible: months <= RULES.warrantyMonths, months};
+}
+function warrantyCheckHtml(w){
+  const r = warrantyLookup(w.cust, w.item, w.receipt);
+  if (!r.found) return `<div class="note warn"><b>No purchase on record</b> for this customer and item. Enter the receipt date, or ask for proof of purchase.</div>`;
+  return `<div class="note ${r.eligible ? 'good' : 'bad'}"><b>${r.eligible ? 'In warranty' : 'Out of warranty, chargeable'}</b>: bought ${fmtD(r.date)} (${r.months.toFixed(1)} months ago). Source: ${esc(r.src)}.</div>`;
+}
+
+VIEWS.self = () => {
+  const t = state.ssTab, u = user(), er = state.errors.self || {};
+  const mine = DB.docs.filter(d => d.raisedBy === u.name && ['Petty cash','Float','Purchase request','RFQ','Job requisition'].includes(d.type));
+  const F = (name, label, input, wide) => `<div class="field ${wide ? 'wide' : ''} ${er[name] ? 'invalid' : ''}"><label for="f_${name}">${label}</label>${input}${er[name] ? `<span class="err">${er[name]}</span>` : ''}</div>`;
+  const branchSel = name => `<select id="f_${name}" name="${name}">${Object.entries(BRANCHES).map(([k,v]) => `<option value="${k}" ${k===state.branch?'selected':''}>${v}</option>`).join('')}</select>`;
+  let form = '';
+  if (t === 'Petty cash') form = F('amount','Amount (KSh)','<input type="number" id="f_amount" name="amount" min="1" placeholder="3450">')
+    + F('purpose','Expense',`<select id="f_purpose" name="purpose">${['Fuel','Transport','Meals','Tools and consumables','Office supplies','Other'].map(o => `<option>${o}</option>`).join('')}</select>`)
+    + F('reason','Reason','<textarea id="f_reason" name="reason" rows="2" placeholder="What the money was spent on"></textarea>', true)
+    + F('file','Receipt','<input type="file" id="f_file" name="file">', true)
+    + `<p class="wide muted" style="margin:0;font-size:12px">Reimbursement of money you have already spent. Up to ${KES(RULES.pettyCashApproverLimit)} goes to your branch approver; above that, a manager.</p>`;
+  else if (t === 'Float') form = F('amount','Amount (KSh)','<input type="number" id="f_amount" name="amount" min="1">')
+    + F('retire','Retire by',`<input type="date" id="f_retire" name="retire" value="${daysAhead(7)}">`)
+    + F('reason','Purpose','<textarea id="f_reason" name="reason" rows="2" placeholder="What the advance is for"></textarea>', true)
+    + `<p class="wide muted" style="margin:0;font-size:12px">An advance for planned spending. Retire it with receipts by the date above. Above ${KES(RULES.floatApproverLimit)} needs a manager.</p>`;
+  else if (t === 'Purchase request') form = F('item','Item',`<select id="f_item" name="item">${DB.items.map(i => `<option value="${i.no}">${i.no} · ${esc(i.desc)}</option>`).join('')}</select>`, true)
+    + F('qty','Quantity','<input type="number" id="f_qty" name="qty" min="1" value="1">')
+    + F('branch','Deliver to', branchSel('branch'))
+    + F('reason','Reason','<textarea id="f_reason" name="reason" rows="2"></textarea>', true);
+  else form = F('rfqType','Requisition type','<select id="f_rfqType" name="rfqType"><option>Local</option><option>Import</option></select>')
+    + F('branch','Location', branchSel('branch'))
+    + F('desc','What you need quoted','<input type="text" id="f_desc" name="desc" placeholder="e.g. Submersible borehole pump 6&quot;, 7.5 kW">', true)
+    + F('qty','Quantity','<input type="number" id="f_qty" name="qty" min="1" value="1">')
+    + F('reason','Notes for procurement','<textarea id="f_reason" name="reason" rows="2"></textarea>', true)
+    + `<p class="wide muted" style="margin:0;font-size:12px">Goes straight to procurement. You get an email once they respond.</p>`;
+  return `
+  <div class="head"><div><h1>Self-service</h1><p>Raise requests the same way as in BC. They follow the same approval routes and are sent to BC.</p></div></div>
+  <div class="tabs" role="tablist">${['Petty cash','Float','Purchase request','RFQ'].map(x => `<button role="tab" aria-selected="${x===t}" data-act="ssTab" data-v="${x}">${x === 'RFQ' ? 'Request for quotation' : x}</button>`).join('')}</div>
+  <div class="grid g2" style="align-items:start">
+    <section class="card"><form class="form" data-form="self" novalidate>${form}<div class="wide btns"><button class="btn primary" type="submit">${t === 'RFQ' ? 'Send to procurement' : 'Submit for approval'}</button></div></form></section>
+    <section class="card flush"><div class="cardhead"><h2>Your requests</h2></div>
+      <div class="scroll"><table class="t"><tbody>
+      ${mine.map(d => `<tr class="click" data-act="open" data-id="${d.id}"><td class="mono">${d.id}</td><td>${d.type}<br><span class="muted">${fmtD(d.date)}</span></td><td class="num">${docTotal(d) ? KES(docTotal(d)) : ''}</td><td>${chip(d.status)}<br>${syncChip(d.id)}</td></tr>`).join('') || '<tr><td class="empty">No requests yet.</td></tr>'}
+      </tbody></table></div></section>
+  </div>`;
+};
+
+VIEWS.approvals = () => {
+  const list = visibleApprovals(), me = user().name;
+  const done = DB.docs.filter(d => d.history.some(h => h.who === me && /^(Approved|Rejected)/.test(h.what)));
+  return `
+  <div class="head"><div><h1>Approvals</h1><p>${can('approvals.manager') ? 'You see everything routed to managers and branch approvers.' : 'You see documents routed to branch approvers. Discounts, credit holds and large amounts go to a manager.'}</p></div></div>
+  <section class="card flush"><div class="scroll"><table class="t"><thead><tr><th>Document</th><th>Raised by</th><th>For</th><th class="num">Amount</th><th>Why it is here</th><th></th></tr></thead><tbody>
+  ${list.map(d => `<tr class="click" data-act="open" data-id="${d.id}"><td><span class="mono">${d.id}</span><br><span class="muted">${d.type}</span></td><td>${esc(d.raisedBy)}<br><span class="muted">${fmtD(d.date)}</span></td><td>${esc(cust(d.cust)?.name || d.purpose || BRANCHES[d.branch])}</td><td class="num">${KES(docTotal(d))}</td><td style="max-width:280px">${esc((d.reasons && d.reasons[0]) || 'Standard approval route')}</td><td><button class="btn sm primary">Review</button></td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nothing waiting. You are up to date.</td></tr>'}
+  </tbody></table></div></section>
+  ${done.length ? `<section class="card flush"><div class="cardhead"><h2>You dealt with</h2></div><div class="scroll"><table class="t"><tbody>
+  ${done.map(d => `<tr class="click" data-act="open" data-id="${d.id}"><td class="mono">${d.id}</td><td>${d.type}</td><td>${esc(d.raisedBy)}</td><td class="num">${KES(docTotal(d))}</td><td>${chip(d.status)}</td><td>${syncChip(d.id)}</td></tr>`).join('')}
+  </tbody></table></div></section>` : ''}`;
+};
+
+VIEWS.sync = () => {
+  const s = DB.settings, f = state.syncFilter;
+  const c = k => DB.sync.filter(o => k === 'waiting' ? (o.status === 'queued' || o.status === 'sending') : o.status === k).length;
+  const conf = DB.sync.filter(o => o.status === 'confirmed' && o.done);
+  const avg = conf.length ? conf.slice(-20).reduce((a,o) => a + (o.done - o.created), 0) / Math.min(20, conf.length) / 1000 : 0;
+  const list = DB.sync.slice().reverse().filter(o => f === 'All' || (f === 'Waiting' ? (o.status === 'queued' || o.status === 'sending') : f === 'Failed' ? o.status === 'failed' : o.status === 'confirmed'));
+  const stuck = DB.docs.filter(d => { const x = syncOf(d.id); return x && x.k !== 'ok' && Date.now() - x.o.created > 5*60000; });
+  return `
+  <div class="head"><div><h1>BC sync</h1><p>Every portal write goes through this queue. A transaction is complete only when BC confirms it. Use the controls on the right to test how the portal behaves when BC is slow, flaky or down.</p></div>
+    ${c('failed') ? `<button class="btn primary" data-act="retryAll">Retry all failed (${c('failed')})</button>` : ''}</div>
+  <div class="tiles">
+    <div class="tile static"><span class="v">${c('waiting')}</span><span class="l">Waiting or sending</span></div>
+    <div class="tile static"><span class="v" style="color:${c('failed') ? 'var(--bad)' : 'inherit'}">${c('failed')}</span><span class="l">Failed after ${RULES.maxAttempts} attempts</span></div>
+    <div class="tile static"><span class="v">${conf.length}</span><span class="l">Confirmed in BC</span></div>
+    <div class="tile static"><span class="v">${avg.toFixed(1)}s</span><span class="l">Average time to confirm (last 20)</span></div>
+  </div>
+  <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(260px,320px);align-items:start" id="syncgrid">
+    <section class="card flush">
+      <div class="tabs" role="tablist" style="padding:0 8px">${['All','Waiting','Failed','Confirmed'].map(t => `<button role="tab" aria-selected="${t===f}" data-act="syncFilter" data-v="${t}">${t}</button>`).join('')}</div>
+      <div class="scroll"><table class="t"><thead><tr><th>Transaction</th><th>Document</th><th>Operation</th><th>By</th><th>Status</th><th class="num">Tries</th><th></th></tr></thead><tbody>
+      ${list.slice(0,60).map(o => `<tr><td class="mono">${o.id}<br><span class="muted" style="font-family:var(--f-body)">${ago(o.created)}</span></td><td class="mono"><a href="#" data-act="open" data-id="${o.docId}" style="color:var(--accent)">${o.docId}</a></td><td>${esc(o.op)}${o.lastError ? `<br><span style="color:var(--bad);font-size:12px">${esc(o.lastError)}</span>` : ''}</td><td>${esc(o.by)}</td>
+        <td>${o.status === 'confirmed' ? '<span class="chip good">Confirmed</span>' : o.status === 'failed' ? '<span class="chip bad">Failed</span>' : o.status === 'sending' ? '<span class="chip info"><i class="spin"></i>Sending</span>' : `<span class="chip ${o.attempts ? 'warn' : ''}">${o.attempts ? 'Retry queued' : 'Queued'}</span>`}</td>
+        <td class="num">${o.attempts}</td><td>${o.status === 'failed' ? `<button class="btn sm" data-act="retry" data-id="${o.id}">Retry</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">Nothing here.</td></tr>'}
+      </tbody></table></div>
+    </section>
+    <div class="grid">
+      <section class="card"><h3>BC connection (simulation)</h3>
+        <div class="field" style="margin-top:8px"><label>Status</label>
+          <div class="seg" role="group" aria-label="BC status"><button data-act="bc" data-v="1" aria-pressed="${s.bcOnline}">Online</button><button data-act="bc" data-v="0" aria-pressed="${!s.bcOnline}">Outage</button></div></div>
+        <div class="field" style="margin-top:14px"><label for="lat">Response time: <b id="latV">${(s.latency/1000).toFixed(1)} s</b></label><input type="range" id="lat" min="300" max="4000" step="100" value="${s.latency}" data-in="latency"></div>
+        <div class="field" style="margin-top:14px"><label for="fail">Failure rate: <b id="failV">${s.failRate}%</b></label><input type="range" id="fail" min="0" max="60" step="5" value="${s.failRate}" data-in="failRate"></div>
+        <p class="muted" style="font-size:12px;margin:12px 0 0">Failed sends retry with a growing wait. After ${RULES.maxAttempts} failures the person who raised it is alerted and the document shows "Not in BC".</p></section>
+      <section class="card"><h3>Reconciliation</h3>
+        ${stuck.length ? `<div class="note bad" style="margin-top:6px"><b>${stuck.length} document${stuck.length>1?'s':''} not in BC after 5 minutes</b><ul>${stuck.slice(0,6).map(d => `<li><a href="#" data-act="open" data-id="${d.id}" style="color:inherit" class="mono">${d.id}</a> ${esc(d.type)}</li>`).join('')}</ul></div>` : `<div class="note good" style="margin-top:6px">Every portal document older than 5 minutes is confirmed in BC.</div>`}
+        <p class="muted" style="font-size:12px;margin:10px 0 0">Run daily: portal documents vs BC confirmations. Anything unmatched goes to finance compliance.</p></section>
+    </div>
+  </div>`;
+};
+
+VIEWS.audit = () => {
+  const q = state.auditQ.toLowerCase();
+  const list = DB.audit.filter(a => !q || (a.user + ' ' + a.action + ' ' + a.target + ' ' + a.detail).toLowerCase().includes(q));
+  return `
+  <div class="head"><div><h1>Audit log</h1><p>Who did what and when: sign-ins, documents, approvals, role changes and BC sync events. Entries cannot be edited.</p></div></div>
+  <section class="card flush">
+    <div class="searchbar"><input type="search" id="auditQ" data-in="audit" placeholder="Filter by person, action or document" value="${esc(state.auditQ)}" aria-label="Filter audit log"></div>
+    <div class="scroll"><table class="t"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody>
+    ${list.slice(0,150).map(a => `<tr><td class="muted" style="white-space:nowrap">${fmtT(a.ts)}</td><td>${esc(a.user)}</td><td>${esc(a.action)}</td><td class="mono">${esc(a.target)}</td><td>${esc(a.detail)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">No entries match.</td></tr>'}
+    </tbody></table></div></section>`;
+};
+
+VIEWS.admin = () => {
+  const t = state.adminTab;
+  const roles = Object.entries(DB.roles);
+  let body = '';
+  if (t === 'Users') body = `
+    <section class="card flush"><div class="scroll"><table class="t"><thead><tr><th>Person</th><th>Role</th><th>Home branch</th><th>Access</th></tr></thead><tbody>
+    ${DB.users.map(u => `<tr><td><div style="display:flex;gap:10px;align-items:center"><span class="avatar">${initials(u.name)}</span><span><b style="font-weight:500">${esc(u.name)}</b><br><span class="muted" style="font-size:12px">${esc(u.title)}</span></span></div></td>
+      <td><select id="ur_${u.id}" data-in="userRole" data-id="${u.id}" aria-label="Role for ${esc(u.name)}" ${u.id === user().id ? 'disabled title="You cannot change your own role"' : ''}>${roles.map(([k,r]) => `<option value="${k}" ${k===u.role?'selected':''}>${r.label}</option>`).join('')}</select></td>
+      <td><select id="ub_${u.id}" data-in="userBranch" data-id="${u.id}" aria-label="Branch for ${esc(u.name)}">${Object.entries(BRANCHES).map(([k,v]) => `<option value="${k}" ${k===u.branch?'selected':''}>${v}</option>`).join('')}</select></td>
+      <td>${u.id === user().id ? '<span class="chip acc">You</span>' : `<button class="btn sm ${u.active ? 'danger' : ''}" data-act="toggleUser" data-id="${u.id}">${u.active ? 'Deactivate' : 'Reactivate'}</button>`}</td></tr>`).join('')}
+    </tbody></table></div></section>
+    <section class="card"><h2>Licence savings</h2>
+      <p class="muted" style="margin:4px 0 12px">Each person moved from a full BC licence to the portal frees KSh 250,000 a year. Usage data identified about 92 light users.</p>
+      <div class="field"><label for="lic">People moved to the portal: <b id="licV">${state.licenceUsers}</b></label><input type="range" id="lic" min="0" max="200" step="1" value="${state.licenceUsers}" data-in="licence"></div>
+      <div class="kv" style="margin-top:14px">
+        <div><span>Saved per year</span><b id="licS" class="num" style="font-family:var(--f-display);font-size:20px">${KES(state.licenceUsers*250000)}</b></div>
+        <div><span>BC licences left (of 936)</span><b id="licL" class="num">${936 - state.licenceUsers}</b></div>
+        <div><span>New-hire requests covered (60)</span><b id="licN">${Math.min(60, state.licenceUsers)} of 60</b></div>
+      </div></section>`;
+  else body = `
+    <section class="card flush"><div class="cardhead"><h2>Permissions by role</h2><button class="btn sm" data-act="resetRoles">Restore defaults</button></div>
+    <div class="scroll"><table class="t mx"><thead><tr><th>Permission</th>${roles.map(([,r]) => `<th class="c">${esc(r.label)}</th>`).join('')}</tr></thead><tbody>
+    ${PERMS.map(([area, ps]) => `<tr class="area"><td colspan="${roles.length+1}">${area}</td></tr>` + ps.map(([k,l]) => `<tr><td>${esc(l)}<br><span class="mono muted" style="font-size:11px">${k}</span></td>${roles.map(([rk,r]) => {
+      const locked = rk === 'admin' && (k === 'admin.roles');
+      return `<td class="c"><input type="checkbox" id="p_${rk}_${k}" data-in="perm" data-r="${rk}" data-p="${k}" ${r.perms.includes(k) ? 'checked' : ''} ${locked ? 'disabled' : ''} aria-label="${esc(r.label)}: ${esc(l)}">${locked ? '<div class="lock">locked</div>' : ''}</td>`; }).join('')}</tr>`).join('')).join('')}
+    </tbody></table></div></section>
+    <div class="note info">Changes apply immediately to everyone with that role and are written to the audit log. The admin's own "Manage users and roles" permission is locked so nobody can lock the portal out.</div>`;
+  return `
+  <div class="head"><div><h1>Users & roles</h1><p>Assign people to roles and decide what each role can do. Roles drive the menu, the buttons and the approval routes.</p></div></div>
+  <div class="tabs" role="tablist">${['Users','Roles & permissions'].map(x => `<button role="tab" aria-selected="${x===t}" data-act="adminTab" data-v="${x}">${x}</button>`).join('')}</div>
+  ${body}`;
+};
+
+/* ============ modals ============ */
+function docModal(d){
+  const c = cust(d.cust), total = docTotal(d);
+  const lines = d.lines ? `<div class="scroll" style="border:1px solid var(--line);border-radius:6px"><table class="t"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Disc</th><th class="num">Total</th></tr></thead><tbody>
+    ${d.lines.map(l => `<tr><td><span class="mono">${l.item}</span><br><span class="muted">${esc(l.desc)}</span></td><td class="num">${l.qty}</td><td class="num">${l.price ? KES(l.price) : '—'}</td><td class="num" ${(l.disc||0) > RULES.maxDiscount ? 'style="color:var(--warn);font-weight:600"' : ''}>${l.disc||0}%</td><td class="num">${l.price ? KES(lineTotal(l)) : '—'}</td></tr>`).join('')}
+    </tbody></table></div>` : '';
+  const sx = syncOf(d.id);
+  const canRetry = sx && sx.k === 'failed' && (sx.o.by === user().name || can('admin.sync'));
+  const convert = d.type === 'Quote' && ['Open','Approved'].includes(d.status) && can('sales.create');
+  const ops = DB.sync.filter(o => o.docId === d.id);
+  return `
+  <div class="ov" data-act="closeBg"><div class="drawer" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="btn sm x" data-act="close">Close</button>
+    <div><div class="eyebrow">${esc(d.type)}</div><h2 id="mTitle" style="font-size:22px" class="mono">${d.id}</h2></div>
+    <div class="btns">${chip(d.status)} ${syncChip(d.id)}</div>
+    ${sx && sx.k === 'failed' ? `<div class="note bad"><b>This is not in BC.</b> ${esc(sx.o.op)} failed ${sx.o.attempts} times: ${esc(sx.o.lastError)}. Until it is confirmed, treat it as not done.${canRetry ? `<div class="btns" style="margin-top:8px"><button class="btn sm primary" data-act="retry" data-id="${sx.o.id}">Retry now</button></div>` : ''}</div>` : ''}
+    <div class="kv">
+      ${c ? `<div><span>Customer</span><b>${esc(c.name)}</b></div>` : ''}
+      ${d.job ? `<div><span>Job</span><b class="mono">${d.job}</b></div>` : ''}
+      <div><span>Raised by</span><b>${esc(d.raisedBy)}</b></div>
+      <div><span>Date</span><b>${fmtD(d.date)}</b></div>
+      <div><span>Branch</span><b>${esc(BRANCHES[d.branch] || '')}</b></div>
+      ${d.purpose ? `<div><span>Expense</span><b>${esc(d.purpose)}</b></div>` : ''}
+      ${d.retire ? `<div><span>Retire by</span><b>${fmtD(d.retire)}</b></div>` : ''}
+      ${d.rfqType ? `<div><span>Type</span><b>${esc(d.rfqType)}</b></div>` : ''}
+      ${total ? `<div><span>Total</span><b class="num" style="font-family:var(--f-display);font-size:18px">${KES(total)}</b></div>` : ''}
+    </div>
+    ${d.reason ? `<div><div class="eyebrow" style="margin-bottom:4px">Reason</div>${esc(d.reason)}</div>` : ''}
+    ${lines}
+    ${d.attachments?.length ? `<div class="btns">${d.attachments.map(a => `<span class="chip info" style="font-weight:500">📎 ${esc(a)}</span>`).join('')}</div>` : ''}
+    ${d.reasons?.length ? `<div class="note warn"><b>Why this needs approval</b><ul>${d.reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>` : ''}
+    ${c && c.limit && d.type === 'Sales order' && can('customers.ledger') ? `<div class="note info">Account balance ${KES(balance(c.no))} of ${KES(c.limit)} limit. Over 90 days: ${KES(aging(c.no).d90)}.</div>` : ''}
+    ${canApprove(d) ? `<div class="card" style="background:var(--sunk)"><div class="field"><label for="apComment">Comment (required to reject)</label><textarea id="apComment" rows="2" placeholder="Visible to ${esc(d.raisedBy)}"></textarea><span class="err" id="apErr"></span></div>
+      <div class="btns" style="margin-top:10px"><button class="btn primary" data-act="approve" data-id="${d.id}">Approve</button><button class="btn danger" data-act="reject" data-id="${d.id}">Reject</button></div></div>` : ''}
+    ${convert ? `<div class="btns"><button class="btn primary" data-act="convert" data-id="${d.id}">Convert to order</button></div>` : ''}
+    <div><div class="eyebrow" style="margin-bottom:8px">History</div><ul class="hist">${d.history.map(h => `<li><span>${fmtD(h.date)}</span><div><b style="font-weight:500">${esc(h.who)}</b>: ${esc(h.what)}</div></li>`).join('')}</ul></div>
+    ${ops.length ? `<div><div class="eyebrow" style="margin-bottom:8px">BC transactions</div><ul class="hist">${ops.map(o => `<li><span class="mono">${o.id}</span><div>${esc(o.op)}: <b style="font-weight:500">${o.status === 'confirmed' ? 'confirmed' : o.status === 'failed' ? 'failed' : o.status === 'sending' ? 'sending' : 'queued'}</b>${o.attempts > 1 && o.status === 'confirmed' ? ` after ${o.attempts} tries` : ''}</div></li>`).join('')}</ul></div>` : ''}
+  </div></div>`;
+}
+function warrantyModal(w){
+  const it = item(w.item), c = cust(w.cust);
+  const decide = can('warranty.decide') && w.status === 'Under assessment';
+  return `
+  <div class="ov" data-act="closeBg"><div class="drawer" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="btn sm x" data-act="close">Close</button>
+    <div><div class="eyebrow">Warranty claim</div><h2 id="mTitle" class="mono" style="font-size:22px">${w.no}</h2></div>
+    <div class="btns">${chip(w.status)} ${w.eligible ? '<span class="chip good">In warranty</span>' : '<span class="chip bad">Out of warranty</span>'} ${syncChip(w.no)}</div>
+    <div class="kv">
+      <div><span>Customer</span><b>${esc(c?.name)}</b></div>
+      <div><span>Item</span><b><span class="mono">${w.item}</span> ${esc(it?.desc)}</b></div>
+      <div><span>Serial</span><b class="mono">${esc(w.serial)}</b></div>
+      <div><span>Purchased</span><b>${fmtD(w.purchased)}</b></div>
+      <div><span>Evidence</span><b>${esc(w.source)}</b></div>
+      ${w.job ? `<div><span>Assessment job</span><b class="mono">${w.job}</b></div>` : ''}
+    </div>
+    <div><div class="eyebrow" style="margin-bottom:4px">Fault</div>${esc(w.fault)}</div>
+    ${decide ? `<div class="btns"><button class="btn primary" data-act="wDecide" data-id="${w.no}" data-v="Approved, repair">Approve repair</button><button class="btn primary" data-act="wDecide" data-id="${w.no}" data-v="Approved, replace">Approve replacement</button><button class="btn danger" data-act="wDecide" data-id="${w.no}" data-v="Rejected">Reject</button></div>`
+      : w.status === 'Under assessment' ? '<p class="muted" style="margin:0">A manager decides this claim after the assessment.</p>' : ''}
+  </div></div>`;
+}
+function renderModal(){
+  const m = state.modal, root = document.getElementById('modalRoot');
+  if (!m){ root.innerHTML = ''; return; }
+  const keep = root.querySelector('.drawer')?.scrollTop || 0;
+  const comment = document.getElementById('apComment')?.value;
+  if (m.kind === 'doc'){ const d = doc(m.id); root.innerHTML = d ? docModal(d) : ''; }
+  else { const w = DB.warranty.find(x => x.no === m.id); root.innerHTML = w ? warrantyModal(w) : ''; }
+  const dr = root.querySelector('.drawer');
+  if (dr){
+    if (m.seen){ dr.style.animation = 'none'; root.querySelector('.ov').style.animation = 'none'; dr.scrollTop = keep; }
+    else { m.seen = true; dr.querySelector('.x')?.focus({preventScroll:true}); }
+    if (comment && document.getElementById('apComment')) document.getElementById('apComment').value = comment;
+  }
+}
+function openModal(kind, id){ state.modal = {kind, id}; renderModal(); }
+function closeModal(){
+  const ov = document.querySelector('#modalRoot .ov');
+  if (ov && motionOn()){ ov.classList.add('leaving'); setTimeout(() => { state.modal = null; renderModal(); }, 160); }
+  else { state.modal = null; renderModal(); }
+}
+
+/* ============ popovers ============ */
+function renderPop(){
+  const root = document.getElementById('popRoot');
+  if (!state.pop || !user()){ root.innerHTML = ''; return; }
+  if (state.pop === 'settings'){
+    const opt = (k, v, l) => `<button data-act="pref" data-k="${k}" data-v="${v}" aria-pressed="${prefs[k]===v}">${l}</button>`;
+    const sw = [['teal',178,.105],['blue',252,.105],['clay',42,.12],['plum',320,.105],['graphite',200,.012]];
+    root.innerHTML = `<div class="pop" role="dialog" aria-label="Display settings">
+      <div class="row"><span class="eyebrow">Theme</span><div class="seg" role="group">${opt('theme','system','System')}${opt('theme','light','Light')}${opt('theme','dark','Dark')}</div></div>
+      <div class="row"><span class="eyebrow">Accent</span><div class="swatches">${sw.map(([k,h,c]) => `<button class="sw" data-act="pref" data-k="accent" data-v="${k}" aria-pressed="${prefs.accent===k}" aria-label="${k}" title="${k[0].toUpperCase()+k.slice(1)}" style="background:oklch(.55 ${c} ${h})"></button>`).join('')}</div></div>
+      <div class="row"><span class="eyebrow">Density</span><div class="seg" role="group">${opt('density','comfortable','Comfortable')}${opt('density','compact','Compact')}</div></div>
+      <div class="row"><span class="eyebrow">Motion</span><div class="seg" role="group">${opt('motion','on','Animations on')}${opt('motion','off','Reduced')}</div></div>
+    </div>`;
+  } else if (state.pop === 'bell'){
+    const ns = myNotes();
+    root.innerHTML = `<div class="pop" role="dialog" aria-label="Notifications" style="gap:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h3>Notifications</h3>${ns.some(n => !n.read) ? '<button class="btn sm" data-act="readAll">Mark all read</button>' : ''}</div>
+      ${ns.length ? ns.slice(0,12).map((n,i) => `<button class="notif ${n.read ? '' : 'unread'}" data-act="note" data-i="${DB.notes.indexOf(n)}">${esc(n.text)}<span>${ago(n.ts)}</span></button>`).join('') : '<div class="empty" style="padding:16px">No notifications.</div>'}
+    </div>`;
+  } else {
+    const u = user();
+    root.innerHTML = `<div class="pop" role="dialog" aria-label="Account">
+      <div style="display:flex;gap:10px;align-items:center"><span class="avatar" style="width:36px;height:36px">${initials(u.name)}</span><div><b>${esc(u.name)}</b><br><span class="muted" style="font-size:12px">${esc(u.title)}</span></div></div>
+      <div><span class="chip acc">${esc(role().label)}</span> <span class="muted" style="font-size:12px">${role().perms.length} permissions</span></div>
+      <div class="row"><span class="eyebrow">Switch person</span>
+        <select id="switchUser" data-in="switchUser">${DB.users.filter(x => x.active).map(x => `<option value="${x.id}" ${x.id===u.id?'selected':''}>${esc(x.name)} · ${esc(DB.roles[x.role]?.label)}</option>`).join('')}</select></div>
+      <div class="btns"><button class="btn" data-act="signout">Sign out</button><button class="btn danger" data-act="reset">Reset sample data</button></div>
+    </div>`;
+  }
+}
+
+/* ============ command palette ============ */
+function palResults(q){
+  q = q.trim().toLowerCase();
+  const out = [];
+  NAV.filter(allowed).forEach(n => { if (!q || n.label.toLowerCase().includes(q)) out.push({g:'Go to', l:n.label, r:'', run:() => go(n.id)}); });
+  if (q){
+    if (can('customers.view')) DB.customers.filter(c => (c.name + ' ' + c.no + ' ' + c.phone).toLowerCase().includes(q)).slice(0,5).forEach(c => out.push({g:'Customers', l:c.name, r:c.no, run:() => { state.sel.cust = c.no; go('customers'); }}));
+    if (can('items.view')) DB.items.filter(i => (i.no + ' ' + i.desc + ' ' + i.barcode).toLowerCase().includes(q)).slice(0,5).forEach(i => out.push({g:'Items', l:i.desc, r:i.no + ' · ' + KES(i.price), run:() => { state.sel.item = i.no; go('items'); }}));
+    DB.docs.filter(d => (d.id + ' ' + d.type + ' ' + (cust(d.cust)?.name||'') + ' ' + d.raisedBy).toLowerCase().includes(q) && (can('sales.view') || !['Quote','Sales order'].includes(d.type) || d.raisedBy === user().name || canApprove(d))).slice(0,6).forEach(d => out.push({g:'Documents', l:d.id + ' ' + d.type, r:d.status, run:() => openModal('doc', d.id)}));
+    if (can('jobs.view')) DB.jobs.filter(j => (j.no + ' ' + j.desc + ' ' + (cust(j.cust)?.name||'')).toLowerCase().includes(q)).slice(0,4).forEach(j => out.push({g:'Jobs', l:j.no + ' ' + j.desc, r:j.status, run:() => { state.sel.job = j.no; go('jobs'); }}));
+  }
+  return out.slice(0,18);
+}
+function renderPal(){
+  const root = document.getElementById('palRoot');
+  if (!state.pal){ root.innerHTML = ''; return; }
+  const res = palResults(state.pal.q); state.pal.res = res;
+  if (state.pal.i >= res.length) state.pal.i = Math.max(0, res.length - 1);
+  let g = null;
+  const rows = res.map((r,i) => { const head = r.g !== g ? `<div class="g">${r.g}</div>` : ''; g = r.g; return head + `<button class="o" data-act="palRun" data-i="${i}" aria-selected="${i===state.pal.i}"><span>${esc(r.l)}</span><span>${esc(r.r)}</span></button>`; }).join('');
+  const fresh = !root.querySelector('.pal');
+  if (fresh){
+    root.innerHTML = `<div class="pal-ov" data-act="palBg"><div class="pal" role="dialog" aria-label="Search"><input id="palQ" placeholder="Search customers, items, documents, jobs or pages" autocomplete="off" value="${esc(state.pal.q)}"><div class="res" id="palRes">${rows}</div>
+      <div class="foot"><span><span class="kbd">↑ ↓</span> move</span><span><span class="kbd">Enter</span> open</span><span><span class="kbd">Esc</span> close</span></div></div></div>`;
+    document.getElementById('palQ').focus();
+  } else document.getElementById('palRes').innerHTML = rows || '<div class="empty">No matches.</div>';
+  root.querySelector('.o[aria-selected="true"]')?.scrollIntoView({block:'nearest'});
+}
+function openPal(){ state.pop = null; renderPop(); state.pal = {q:'', i:0}; renderPal(); }
+function closePal(){ state.pal = null; renderPal(); }
+
+/* ============ cart ============ */
+function addToCart(no, qty = 1){
+  const it = item(no); if (!it) return;
+  const l = state.cart.lines.find(x => x.item === no);
+  if (l) l.qty += qty; else state.cart.lines.push({item:no, desc:it.desc, qty, price:it.price, disc:0});
+  state.flash = no;
+}
+function submitSale(){
+  const cart = state.cart, c = cust(cart.cust), u = user();
+  const ev = evaluate(cart.lines, c, cart.kind, state.branch);
+  const isOrder = cart.kind === 'order';
+  const d = {id: nextId(isOrder ? 'SO' : 'SQ'), type: isOrder ? 'Sales order' : 'Quote', cust: cart.cust, branch: state.branch, raisedBy: u.name, date: todayISO, lines: cart.lines.map(l => ({...l})), reasons: ev.reasons, history: []};
+  hist(d, u.name, isOrder ? 'Placed order' : 'Created quote');
+  if (ev.reasons.length){ d.status = 'Pending approval'; d.needs = 'manager'; hist(d, 'Portal', 'Sent for approval: ' + ev.reasons.map(r => r.split(':')[0]).join('; ')); }
+  else if (isOrder){ d.status = 'Released'; releaseStock(d); hist(d, 'Portal', 'Released'); }
+  else d.status = 'Open';
+  DB.docs.unshift(d);
+  log(isOrder ? 'Placed order' : 'Created quote', d.id, `${KES(docTotal(d))}${ev.reasons.length ? ' · held for approval' : ''}`);
+  enqueue(d.id, isOrder ? 'Create sales order' : 'Create quote');
+  state.cart = {lines:[], cust:'', kind:'order'};
+  toast(d.status === 'Pending approval' ? `${d.id} sent for approval` : `${d.id} saved. Sending to BC…`);
+  openModal('doc', d.id); renderMain(false);
+}
+
+/* ============ actions ============ */
+const ACT = {
+  signin: el => { prefs.uid = el.dataset.id; const u = user(); state.branch = u.branch; prefs.branch = u.branch; savePrefs(); log('Signed in', u.id, DB.roles[u.role].label, u.name); save(); state.view = 'home'; state.lastView = null; renderApp(); },
+  signout: () => { log('Signed out', user().id, ''); save(); prefs.uid = null; savePrefs(); state.pop = null; state.modal = null; renderModal(); renderApp(); },
+  go: el => { if (el.dataset.low) state.lowOnly = true; go(el.dataset.v); },
+  openFailed: () => { const o = DB.sync.find(x => x.status === 'failed' && x.by === user().name); if (o) openModal('doc', o.docId); },
+  sel: el => { state.sel[el.dataset.k] = el.dataset.id; renderMain(false); },
+  custTab: el => { state.custTab = el.dataset.v; renderMain(false); },
+  stmt: el => { state.q.stmt = el.dataset.v; renderMain(false); },
+  ssTab: el => { state.ssTab = el.dataset.v; state.errors.self = null; renderMain(false); },
+  salesFilter: el => { state.salesFilter = el.dataset.v; renderMain(false); },
+  syncFilter: el => { state.syncFilter = el.dataset.v; renderMain(false); },
+  adminTab: el => { state.adminTab = el.dataset.v; renderMain(false); },
+  kind: el => { state.cart.kind = el.dataset.v; renderMain(false); },
+  clearLow: () => { state.lowOnly = false; renderMain(false); },
+  addItem: el => { addToCart(el.dataset.id); toast(el.dataset.id + ' added'); state.q.scan = ''; state.scanMsg = ''; renderMain(false); renderNavCounts(); if (state.view === 'counter') document.getElementById('scanQ')?.focus(); },
+  tpl: el => { const t = TEMPLATES.find(x => x.id === el.dataset.id); t.lines.forEach(([n,q]) => addToCart(n,q)); state.flash = null; toast(t.name + ' added'); renderMain(false); },
+  qty: el => { const l = state.cart.lines[+el.dataset.i]; l.qty = Math.max(1, l.qty + (+el.dataset.d)); renderMain(false); },
+  rm: el => { state.cart.lines.splice(+el.dataset.i, 1); renderMain(false); },
+  clearCart: () => { state.cart.lines = []; renderMain(false); },
+  submitSale,
+  sellTo: el => { state.cart.cust = el.dataset.id; go('counter'); },
+  open: el => openModal('doc', el.dataset.id),
+  openW: el => openModal('w', el.dataset.id),
+  close: closeModal,
+  closeBg: (el, e) => { if (e.target === el) closeModal(); },
+  approve: el => decide(el.dataset.id, true),
+  reject: el => decide(el.dataset.id, false),
+  retry: el => { const o = DB.sync.find(x => x.id === el.dataset.id); if (o){ retry(o); toast(`${o.docId} queued for BC again`); renderModal(); } },
+  retryAll: () => { const f = DB.sync.filter(o => o.status === 'failed'); f.forEach(retry); toast(`${f.length} queued for BC again`); },
+  bc: el => { DB.settings.bcOnline = el.dataset.v === '1'; log(DB.settings.bcOnline ? 'BC back online' : 'BC outage started', 'BC', 'Simulation'); save(); syncChanged(); renderMain(false); toast(DB.settings.bcOnline ? 'BC is back. Sending queued work.' : 'BC outage: work will queue in the portal'); },
+  convert: el => {
+    const q = doc(el.dataset.id), c = cust(q.cust), u = user();
+    const ev = evaluate(q.lines.map(l => ({...l, disc: q.status === 'Approved' ? 0 : l.disc})), c, 'order', q.branch);
+    const reasons = ev.reasons.filter(r => !r.startsWith('Line'));
+    const d = {id: nextId('SO'), type:'Sales order', cust:q.cust, branch:q.branch, raisedBy:u.name, date:todayISO, lines:q.lines.map(l => ({...l})), reasons, from:q.id, history:[]};
+    hist(d, u.name, 'Converted from quote ' + q.id);
+    if (reasons.length){ d.status = 'Pending approval'; d.needs = 'manager'; hist(d, 'Portal', 'Held for approval: credit limit'); }
+    else { d.status = 'Released'; releaseStock(d); hist(d, 'Portal', 'Released'); }
+    q.status = 'Converted'; hist(q, u.name, 'Converted to order ' + d.id);
+    DB.docs.unshift(d); log('Converted quote', q.id, 'to ' + d.id); enqueue(d.id, 'Create sales order');
+    state.modal = {kind:'doc', id:d.id}; renderModal(); renderMain(false);
+    toast(d.status === 'Released' ? `${d.id} released. Sending to BC…` : `${d.id} held for credit approval`);
+  },
+  wDecide: el => {
+    const w = DB.warranty.find(x => x.no === el.dataset.id); w.status = el.dataset.v;
+    const j = job(w.job); if (j && el.dataset.v !== 'Rejected') j.status = 'In progress';
+    log('Warranty decision', w.no, w.status); enqueue(w.no, 'Update warranty claim'); save(); toast(`${w.no}: ${w.status}`); renderModal(); renderMain(false);
+  },
+  reset: () => { DB = seed(); save(); const u = DB.users.find(x => x.id === prefs.uid); if (!u) prefs.uid = null; state.cart = {lines:[], cust:'', kind:'order'}; state.modal = null; state.pop = null; state.sel = {}; renderModal(); renderApp(); toast('Sample data restored'); },
+  resetRoles: () => { DB.roles = JSON.parse(JSON.stringify(DEFAULT_ROLES)); log('Restored default roles', 'Roles', ''); save(); refreshAfterRoleChange(); toast('Default permissions restored'); },
+  toggleUser: el => { const u = DB.users.find(x => x.id === el.dataset.id); u.active = !u.active; log(u.active ? 'Reactivated user' : 'Deactivated user', u.name, ''); save(); renderMain(false); toast(`${u.name} ${u.active ? 'reactivated' : 'deactivated'}`); },
+  pop: el => { state.pop = state.pop === el.dataset.v ? null : el.dataset.v; if (state.pop === 'bell') {} renderPop(); },
+  pref: el => { prefs[el.dataset.k] = el.dataset.v; savePrefs(); applyPrefs(); renderPop(); },
+  readAll: () => { myNotes().forEach(n => n.read = true); save(); renderPop(); renderNavCounts(); },
+  note: el => { const n = DB.notes[+el.dataset.i]; n.read = true; save(); state.pop = null; renderPop(); renderNavCounts(); if (n.doc && doc(n.doc)) openModal('doc', n.doc); },
+  palette: openPal,
+  palBg: (el, e) => { if (e.target === el) closePal(); },
+  palRun: el => { const r = state.pal.res[+el.dataset.i]; closePal(); r && r.run(); },
+};
+function refreshAfterRoleChange(){ document.getElementById('side').innerHTML = navHtml(); renderMain(false); renderNavCounts(); }
+function decide(id, ok){
+  const d = doc(id), who = user().name, comment = (document.getElementById('apComment')?.value || '').trim();
+  if (!ok && !comment){ const e = document.getElementById('apErr'); if (e) e.textContent = 'Add a comment so ' + d.raisedBy + ' knows why.'; document.getElementById('apComment')?.focus(); return; }
+  if (ok){
+    if (d.type === 'Sales order'){ d.status = 'Released'; releaseStock(d); hist(d, who, 'Approved'); hist(d, 'Portal', 'Released'); }
+    else if (d.type === 'Job requisition'){ d.status = 'Released'; applyRequisition(d); hist(d, who, 'Approved'); hist(d, 'Portal', 'Released from store'); }
+    else { d.status = 'Approved'; hist(d, who, 'Approved'); }
+  } else { d.status = 'Rejected'; hist(d, who, 'Rejected'); }
+  if (comment) hist(d, who, 'Comment: ' + comment);
+  log(ok ? 'Approved' : 'Rejected', d.id, comment);
+  notify(d.raisedBy, `${d.id} ${d.type.toLowerCase()} was ${ok ? 'approved' : 'rejected'} by ${who}${comment ? ': "' + comment + '"' : ''}.`, d.id);
+  enqueue(d.id, (ok ? 'Approve ' : 'Reject ') + d.type.toLowerCase());
+  save(); toast(`${d.id} ${ok ? 'approved' : 'rejected'}. Sending to BC…`); renderModal(); renderMain(false);
+}
+
+/* ============ events ============ */
+document.addEventListener('click', e => {
+  if (state.pop && !e.target.closest('.pop') && !e.target.closest('[data-act="pop"]')){ state.pop = null; renderPop(); }
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const f = ACT[el.dataset.act]; if (!f) return;
+  if (!['closeBg','palBg'].includes(el.dataset.act)) e.preventDefault();
+  f(el, e);
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && user()){ e.preventDefault(); state.pal ? closePal() : openPal(); return; }
+  if (state.pal){
+    if (e.key === 'Escape'){ closePal(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); const n = state.pal.res.length; if (n){ state.pal.i = (state.pal.i + (e.key === 'ArrowDown' ? 1 : -1) + n) % n; renderPal(); } return; }
+    if (e.key === 'Enter'){ e.preventDefault(); const r = state.pal.res[state.pal.i]; closePal(); r && r.run(); return; }
+    return;
+  }
+  if (e.key === 'Escape'){ if (state.modal) closeModal(); else if (state.pop){ state.pop = null; renderPop(); } }
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'palQ'){ state.pal.q = el.value; state.pal.i = 0; renderPal(); return; }
+  const k = el.dataset.in; if (!k) return;
+  if (k === 'q'){ state.q[el.dataset.k] = el.value; if (el.dataset.k === 'scan') state.scanMsg = ''; renderMain(false); }
+  else if (k === 'audit'){ state.auditQ = el.value; renderMain(false); }
+  else if (k === 'lineQty'){ const v = parseInt(el.value, 10); if (v > 0){ state.cart.lines[+el.dataset.i].qty = v; renderMain(false); } }
+  else if (k === 'lineDisc'){ state.cart.lines[+el.dataset.i].disc = Math.min(100, Math.max(0, parseFloat(el.value) || 0)); renderMain(false); }
+  else if (k === 'latency'){ DB.settings.latency = +el.value; document.getElementById('latV').textContent = (el.value/1000).toFixed(1) + ' s'; save(); }
+  else if (k === 'failRate'){ DB.settings.failRate = +el.value; document.getElementById('failV').textContent = el.value + '%'; save(); }
+  else if (k === 'licence'){ const n = +el.value; state.licenceUsers = n; document.getElementById('licV').textContent = n; document.getElementById('licS').textContent = KES(n*250000); document.getElementById('licL').textContent = 936 - n; document.getElementById('licN').textContent = Math.min(60, n) + ' of 60'; }
+  else if (k === 'wText'){ state.w = state.w || {cust:'C10102', item:'PKM60', receipt:'', serial:'', fault:''}; state.w[el.name] = el.value; }
+});
+document.addEventListener('change', e => {
+  const el = e.target, k = el.dataset.in; if (!k) return;
+  if (k === 'cat'){ state.itemCat = el.value; renderMain(false); }
+  else if (k === 'branch'){ state.branch = el.value; prefs.branch = el.value; savePrefs(); renderMain(false); }
+  else if (k === 'cartCust'){ state.cart.cust = el.value; renderMain(false); }
+  else if (k === 'wCheck'){ state.w = state.w || {cust:'C10102', item:'PKM60', receipt:'', serial:'', fault:''}; state.w[el.name] = el.value; renderMain(false); }
+  else if (k === 'switchUser'){ prefs.uid = el.value; const u = user(); state.branch = u.branch; prefs.branch = u.branch; savePrefs(); log('Signed in', u.id, DB.roles[u.role].label, u.name); save(); state.pop = null; state.modal = null; state.lastView = null; renderModal(); renderApp(); toast('Signed in as ' + u.name); }
+  else if (k === 'userRole'){ const u = DB.users.find(x => x.id === el.dataset.id), from = DB.roles[u.role].label; u.role = el.value; log('Changed role', u.name, `${from} → ${DB.roles[u.role].label}`); save(); toast(`${u.name} is now ${DB.roles[u.role].label}`); }
+  else if (k === 'userBranch'){ const u = DB.users.find(x => x.id === el.dataset.id); u.branch = el.value; log('Changed branch', u.name, BRANCHES[u.branch]); save(); }
+  else if (k === 'perm'){
+    const r = DB.roles[el.dataset.r], p = el.dataset.p;
+    if (el.checked){ if (!r.perms.includes(p)) r.perms.push(p); } else r.perms = r.perms.filter(x => x !== p);
+    log(el.checked ? 'Granted permission' : 'Removed permission', r.label, p); save(); refreshAfterRoleChange();
+  }
+});
+document.addEventListener('submit', e => {
+  const f = e.target, kind = f.dataset.form; if (!kind) return;
+  e.preventDefault();
+  const u = user();
+  if (kind === 'scan'){
+    const q = (state.q.scan || '').trim().toLowerCase(); if (!q) return;
+    const exact = DB.items.find(i => i.barcode === q || i.no.toLowerCase() === q);
+    const hits = DB.items.filter(i => (i.no + ' ' + i.desc + ' ' + i.barcode).toLowerCase().includes(q));
+    const it = exact || (hits.length === 1 ? hits[0] : null);
+    if (it){ addToCart(it.no); state.q.scan = ''; state.scanMsg = ''; toast(it.no + ' added'); }
+    else state.scanMsg = hits.length ? `${hits.length} items match "${state.q.scan}". Tap one below.` : `No item with code or barcode "${state.q.scan}".`;
+    renderMain(false); document.getElementById('scanQ')?.focus(); return;
+  }
+  if (kind === 'req'){
+    const j = job(state.sel.job), it = item(f.item.value), qty = parseInt(f.qty.value, 10);
+    if (!(qty > 0)){ state.errors.req = {qty:'Enter a quantity of 1 or more'}; renderMain(false); return; }
+    state.errors.req = null;
+    const d = {id: nextId('JR'), type:'Job requisition', job:j.no, branch:j.branch, raisedBy:u.name, date:todayISO, lines:[{item:it.no, desc:it.desc, qty, price:it.price, disc:0}], history:[]};
+    const amt = qty * it.price, short = qty > (it.stock[j.branch] || 0);
+    hist(d, u.name, 'Requisitioned into ' + j.no);
+    if (amt > RULES.reqAutoLimit){ d.status = 'Pending approval'; d.needs = 'manager'; d.reasons = [`Value ${KES(amt)} is above the ${KES(RULES.reqAutoLimit)} limit`]; hist(d, 'Portal', 'Sent for approval: value above limit'); }
+    else { d.status = 'Released'; applyRequisition(d); hist(d, 'Portal', 'Released from store'); }
+    DB.docs.unshift(d); log('Requisitioned', d.id, `${qty} × ${it.no} into ${j.no}`);
+    enqueue(d.id, 'Post requisition to ' + j.no);
+    toast(d.status === 'Released' ? `${d.id} released${short ? ' (store short, backordered)' : ''}. Sending to BC…` : `${d.id} sent for approval`);
+    renderMain(false); return;
+  }
+  if (kind === 'warranty'){
+    const errs = {};
+    if (!f.serial.value.trim()) errs.serial = 'Enter the serial number from the unit';
+    if (!f.fault.value.trim()) errs.fault = 'Describe the fault';
+    const lk = warrantyLookup(f.cust.value, f.item.value, f.receipt.value);
+    state.w = {cust:f.cust.value, item:f.item.value, receipt:f.receipt.value, serial:f.serial.value, fault:f.fault.value};
+    if (Object.keys(errs).length){ state.errors.warranty = errs; renderMain(false); return; }
+    if (!lk.found){ toast('Add a receipt date or proof of purchase first', 'bad'); return; }
+    state.errors.warranty = null;
+    const c = cust(f.cust.value), it = item(f.item.value);
+    const jno = 'JOB-' + (DB.seq.JOB++);
+    DB.jobs.unshift({no:jno, cust:c.no, desc:'Warranty assessment: ' + it.desc, branch:state.branch, engineer:u.name, status:'Open', opened:todayISO, entries:[], attachments:[]});
+    const w = {no:'WC-' + (DB.seq.WC++), cust:c.no, item:it.no, serial:f.serial.value.trim(), purchased:lk.date, source:lk.src, eligible:lk.eligible, fault:f.fault.value.trim(), status:'Under assessment', job:jno, date:todayISO};
+    DB.warranty.unshift(w); state.w = null;
+    log('Logged warranty claim', w.no, `${it.no} · ${lk.eligible ? 'in warranty' : 'expired'} · opened ${jno}`);
+    enqueue(w.no, 'Create warranty claim and job');
+    toast(`${w.no} logged, ${jno} opened`); openModal('w', w.no); renderMain(false); return;
+  }
+  if (kind === 'self'){
+    const t = state.ssTab, errs = {}, v = n => f[n] ? f[n].value.trim() : '';
+    if (t === 'Petty cash' || t === 'Float'){ if (!(+v('amount') > 0)) errs.amount = 'Enter an amount above zero'; if (!v('reason')) errs.reason = t === 'Float' ? 'Say what the advance is for' : 'Say what the money was spent on'; }
+    if (t === 'Float' && v('retire') && v('retire') < todayISO) errs.retire = 'The retire date cannot be in the past';
+    if (t === 'Purchase request'){ if (!(+v('qty') > 0)) errs.qty = 'Enter 1 or more'; if (!v('reason')) errs.reason = 'Give a reason'; }
+    if (t === 'RFQ'){ if (!v('desc')) errs.desc = 'Describe what you need'; if (!(+v('qty') > 0)) errs.qty = 'Enter 1 or more'; }
+    if (Object.keys(errs).length){ state.errors.self = errs; renderMain(false); return; }
+    state.errors.self = null;
+    let d;
+    if (t === 'Petty cash'){
+      const amt = +v('amount');
+      d = {id:nextId('PC'), type:t, branch:state.branch, raisedBy:u.name, date:todayISO, amount:amt, purpose:v('purpose'), reason:v('reason'), attachments: f.file.files[0] ? [f.file.files[0].name] : [], history:[]};
+      d.needs = amt > RULES.pettyCashApproverLimit ? 'manager' : 'approver';
+      if (d.needs === 'manager') d.reasons = [`Amount is above ${KES(RULES.pettyCashApproverLimit)}, so a manager approves`];
+    } else if (t === 'Float'){
+      const amt = +v('amount');
+      d = {id:nextId('FL'), type:t, branch:state.branch, raisedBy:u.name, date:todayISO, amount:amt, purpose:'Advance', reason:v('reason'), retire:v('retire'), history:[]};
+      d.needs = amt > RULES.floatApproverLimit ? 'manager' : 'approver';
+      if (d.needs === 'manager') d.reasons = [`Amount is above ${KES(RULES.floatApproverLimit)}, so a manager approves`];
+    } else if (t === 'Purchase request'){
+      const it = item(v('item'));
+      d = {id:nextId('PR'), type:t, branch:v('branch'), raisedBy:u.name, date:todayISO, lines:[{item:it.no, desc:it.desc, qty:+v('qty'), price:it.cost, disc:0}], reason:v('reason'), needs:'approver', history:[]};
+    } else {
+      d = {id:nextId('RFQ'), type:'RFQ', branch:v('branch'), raisedBy:u.name, date:todayISO, rfqType:v('rfqType'), reason:v('reason'), lines:[{item:'—', desc:v('desc'), qty:+v('qty'), price:0, disc:0}], status:'Sent to procurement', history:[]};
+      hist(d, u.name, 'Sent to procurement');
+    }
+    if (!d.status){ d.status = 'Pending approval'; hist(d, u.name, 'Submitted for approval'); }
+    DB.docs.unshift(d); log('Submitted', d.id, `${d.type}${docTotal(d) ? ' ' + KES(docTotal(d)) : ''}`);
+    enqueue(d.id, t === 'RFQ' ? 'Send RFQ to procurement' : 'Create ' + t.toLowerCase());
+    toast(d.status === 'Sent to procurement' ? `${d.id} sent to procurement` : `${d.id} submitted to ${d.needs === 'manager' ? 'a manager' : 'your branch approver'}`);
+    f.reset(); renderMain(false); return;
+  }
+});
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (VIEWS[h] && h !== state.view && user()){ state.view = h; renderMain(true); } });
+setInterval(() => { if (state.view === 'sync' || state.view === 'customers' || state.view === 'items') { document.querySelectorAll('.cache').forEach(c => c.textContent = 'Portal copy refreshed ' + ago(DB.settings.cacheAt)); } }, 30000);
+
+/* ============ boot ============ */
+const h0 = location.hash.slice(1); if (VIEWS[h0]) state.view = h0;
+renderApp();
+</script>
+</body>
+</html>
